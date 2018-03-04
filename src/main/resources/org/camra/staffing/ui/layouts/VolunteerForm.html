@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="design-properties" content="{&quot;RULERS_VISIBLE&quot;:true,&quot;GUIDELINES_VISIBLE&quot;:false,&quot;SNAP_TO_OBJECTS&quot;:true,&quot;SNAP_TO_GRID&quot;:true,&quot;SNAPPING_DISTANCE&quot;:10,&quot;GENERATE_GETTERS&quot;:false,&quot;JAVA_SOURCES_ROOT&quot;:&quot;src/main/java&quot;,&quot;THEME&quot;:&quot;mytheme&quot;}">
+  <meta name="vaadin-version" content="8.0.5">
+ </head>
+ <body>
+  <vaadin-css-layout style-name="form-wrapper product-form" id="product-form" width="500px" height-full>
+   <vaadin-vertical-layout style-name="form-layout" size-full margin="false">
+    <vaadin-label width-full _id="title"></vaadin-label>
+    <vaadin-grid-layout width-full>
+     <row>
+      <column>
+       <vaadin-text-field caption="Forename" width-full _id="forename"></vaadin-text-field>
+      </column>
+      <column>
+       <vaadin-text-field caption="Surname" width-full _id="surname"></vaadin-text-field>
+      </column>
+     </row>
+    </vaadin-grid-layout>
+    <vaadin-text-field caption="Email Address" width-full _id="email"></vaadin-text-field>
+    <vaadin-grid-layout width-full>
+     <row>
+      <column>
+       <vaadin-text-field caption="Membership" width-full _id="membership"></vaadin-text-field>
+      </column>
+      <column>
+       <vaadin-text-field caption="Role" width-full _id="role"></vaadin-text-field>
+      </column>
+     </row>
+    </vaadin-grid-layout>
+    <vaadin-grid-layout width-full>
+     <row>
+      <column>
+       <vaadin-check-box caption="First Aid" width-full _id="firstaid"></vaadin-check-box>
+      </column>
+      <column>
+       <vaadin-check-box caption="SIA" width-full _id="sia"></vaadin-check-box>
+      </column>
+      <column>
+       <vaadin-check-box caption="Cellar" width-full _id="cellar"></vaadin-check-box>
+      </column>
+     </row>
+    </vaadin-grid-layout>
+    <vaadin-css-layout id="areaholder" width-full height="50px" _id="areaSelectorHolder" :expand>
+     <vaadin-grid width="0px" height="0px" _id="areaGrid"></vaadin-grid>
+    </vaadin-css-layout>
+    <vaadin-grid-layout width-full>
+     <row>
+      <column>
+       <vaadin-button style-name="primary" _id="save">
+         Save 
+       </vaadin-button>
+      </column>
+      <column>
+       <vaadin-button style-name="cancel" click-shortcut="escape" _id="cancel">
+         Cancel 
+       </vaadin-button>
+      </column>
+      <column>
+       <vaadin-button style-name="danger" _id="delete">
+         Delete 
+       </vaadin-button>
+      </column>
+     </row>
+    </vaadin-grid-layout>
+   </vaadin-vertical-layout>
+  </vaadin-css-layout>
+ </body>
+</html>

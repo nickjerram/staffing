@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="design-properties" content="{&quot;RULERS_VISIBLE&quot;:true,&quot;GUIDELINES_VISIBLE&quot;:false,&quot;SNAP_TO_OBJECTS&quot;:true,&quot;SNAP_TO_GRID&quot;:true,&quot;SNAPPING_DISTANCE&quot;:10,&quot;GENERATE_GETTERS&quot;:false,&quot;JAVA_SOURCES_ROOT&quot;:&quot;src/main/java&quot;,&quot;THEME&quot;:&quot;mytheme&quot;}">
+  <meta name="vaadin-version" content="8.0.5">
+ </head>
+ <body>
+  <vaadin-css-layout style-name="crud-view" size-full>
+   <vaadin-vertical-layout style-name="crud-main-layout" size-full>
+    <vaadin-horizontal-layout style-name="top-bar" width-full>
+     <vaadin-label plain-text _id="title" :expand>
+       Label 
+     </vaadin-label>
+     <vaadin-button style-name="primary" plain-text _id="newButton">
+       Button 
+     </vaadin-button>
+     <vaadin-button plain-text _id="closeButton">
+       Button 
+     </vaadin-button>
+    </vaadin-horizontal-layout>
+    <vaadin-css-layout width-full _id="information"></vaadin-css-layout>
+    <vaadin-css-layout size-full _id="gridHolder" :expand></vaadin-css-layout>
+    <vaadin-css-layout _id="formHolder"></vaadin-css-layout>
+   </vaadin-vertical-layout>
+  </vaadin-css-layout>
+ </body>
+</html>
