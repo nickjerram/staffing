@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+ <meta charset="UTF-8">
+ <meta name="design-properties" content="{&quot;RULERS_VISIBLE&quot;:true,&quot;GUIDELINES_VISIBLE&quot;:false,&quot;SNAP_TO_OBJECTS&quot;:true,&quot;SNAP_TO_GRID&quot;:true,&quot;SNAPPING_DISTANCE&quot;:10,&quot;GENERATE_GETTERS&quot;:false,&quot;JAVA_SOURCES_ROOT&quot;:&quot;src/main/java&quot;,&quot;THEME&quot;:&quot;mytheme&quot;}">
+ <meta name="vaadin-version" content="8.0.5">
+</head>
+<body>
+<vaadin-vertical-layout style-name="form-wrapper product-form" id="product-form" width="700px" height-full margin="false">
+ <vaadin-vertical-layout style-name="form-layout" height="95%" margin="false" _id="formLayout">
+  <vaadin-label _id="title" style-name="h1" width-full/>
+  <vaadin-grid-layout width-full margin=false>
+   <row>
+    <column><vaadin-check-box caption="Locked" _id="locked" width-full/></column>
+    <column><vaadin-check-box caption="Worked" _id="worked" width-full/></column>
+   </row>
+   <row>
+    <column><vaadin-text-field caption="Tokens" _id="tokens"  width-full /></column>
+    <column><vaadin-text-field caption="Comment" _id="comment"  width-full /></column>
+   </row>
+  </vaadin-grid-layout>
+
+  <vaadin-grid-layout width-full margin=false>
+   <row>
+    <column><vaadin-button style-name="primary" _id="save">Save</vaadin-button></column>
+    <column><vaadin-button style-name="cancel" _id="cancel" click-shortcut="escape">Cancel</vaadin-button></column>
+   </row>
+  </vaadin-grid-layout>
+
+ </vaadin-vertical-layout>
+</vaadin-vertical-layout>
+</body>
+</html>

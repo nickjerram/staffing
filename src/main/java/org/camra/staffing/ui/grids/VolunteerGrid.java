@@ -12,16 +12,21 @@ import com.vaadin.ui.renderers.NumberRenderer;
 import com.vaadin.ui.themes.ValoTheme;
 import org.camra.staffing.data.dto.VolunteerDTO;
 import org.camra.staffing.data.provider.VolunteerDataProvider;
+import org.camra.staffing.ui.views.VolunteerSessionView;
+import org.camra.staffing.ui.views.VolunteerSessionViewFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import java.util.function.Consumer;
 
 @SpringComponent
 @UIScope
 public class VolunteerGrid extends Grid<VolunteerDTO> {
 
-    @Autowired
-    private VolunteerDataProvider volunteerDataProvider;
+    @Autowired private VolunteerDataProvider volunteerDataProvider;
+    @Autowired private VolunteerSessionViewFactory volunteerSessionViewFactory;
+    private Consumer<VolunteerDTO> volunteerEdit;
+    private Consumer<VolunteerDTO> volunteerSessionsView;
 
     @PostConstruct
     @SuppressWarnings("unused")
@@ -42,10 +47,20 @@ public class VolunteerGrid extends Grid<VolunteerDTO> {
         addColumn(this::formatCellar, new HtmlRenderer()).setCaption("Cellar").setSortable(false);
         addColumn(this::formatComment).setCaption("Comment").setSortable(false);
 
+        addItemClickListener(this::itemClick);
+
         HeaderRow filterRow = appendHeaderRow();
         addStringFilter(filterRow, "surname");
         addStringFilter(filterRow, "role");
 
+    }
+
+    public void setEditHandler(Consumer<VolunteerDTO> volunteerEdit) {
+        this.volunteerEdit = volunteerEdit;
+    }
+
+    public void setVolunteerSessionsViewHandler(Consumer<VolunteerDTO> volunteerSessionsView) {
+        this.volunteerSessionsView = volunteerSessionsView;
     }
 
     private String formatEdit(VolunteerDTO item) {
@@ -103,6 +118,18 @@ public class VolunteerGrid extends Grid<VolunteerDTO> {
             volunteerDataProvider.refreshAll();
         });
         headerCell.setComponent(filterField);
+    }
+
+    private void itemClick(Grid.ItemClick<VolunteerDTO> event) {
+        if (event.getColumn().getId().equals("edit")) {
+            if (volunteerEdit!=null) {
+                volunteerEdit.accept(event.getItem());
+            }
+        } else if (event.getColumn().getId().equals("sessions")) {
+            if (volunteerSessionsView!=null) {
+                volunteerSessionsView.accept(event.getItem());
+            }
+        }
     }
 
 }

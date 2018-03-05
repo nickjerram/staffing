@@ -6,8 +6,8 @@
   <meta name="vaadin-version" content="8.0.5">
  </head>
  <body>
-  <vaadin-css-layout style-name="form-wrapper product-form" id="product-form" width="500px" height-full>
-   <vaadin-vertical-layout style-name="form-layout" size-full margin="false">
+  <vaadin-vertical-layout style-name="form-wrapper product-form" id="product-form" width="500px" height-full margin="false">
+   <vaadin-vertical-layout style-name="form-layout" height="95%" margin="false" _id="formLayout">
     <vaadin-label width-full _id="title"></vaadin-label>
     <vaadin-grid-layout width-full>
      <row>
@@ -43,9 +43,6 @@
       </column>
      </row>
     </vaadin-grid-layout>
-    <vaadin-css-layout id="areaholder" width-full height="50px" _id="areaSelectorHolder" :expand>
-     <vaadin-grid width="0px" height="0px" _id="areaGrid"></vaadin-grid>
-    </vaadin-css-layout>
     <vaadin-grid-layout width-full>
      <row>
       <column>
@@ -66,6 +63,6 @@
      </row>
     </vaadin-grid-layout>
    </vaadin-vertical-layout>
-  </vaadin-css-layout>
+  </vaadin-vertical-layout>
  </body>
 </html>

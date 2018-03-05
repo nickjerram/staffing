@@ -5,9 +5,11 @@ import com.vaadin.data.provider.QuerySortOrder;
 import com.vaadin.shared.data.sort.SortDirection;
 import org.camra.staffing.data.dto.AreaSelectorDTO;
 import org.camra.staffing.data.dto.VolunteerDTO;
-import org.camra.staffing.data.entity.AreaSelector;
-import org.camra.staffing.data.entity.Volunteer;
+import org.camra.staffing.data.dto.VolunteerSessionDTO;
+import org.camra.staffing.data.entity.*;
 import org.camra.staffing.data.repository.AreaSelectorRepository;
+import org.camra.staffing.data.repository.AssignableAreaRepository;
+import org.camra.staffing.data.repository.AssignedCountRepository;
 import org.camra.staffing.data.repository.VolunteerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Service
@@ -23,6 +26,8 @@ public class VolunteerService {
 
     @Autowired private VolunteerRepository volunteerRepository;
     @Autowired private AreaSelectorRepository areaSelectorRepository;
+    @Autowired private AssignableAreaRepository assignableAreaRepository;
+    @Autowired private AssignedCountRepository assignedCountRepository;
 
     public List<VolunteerDTO> getVolunteers(Query<VolunteerDTO,Example<Volunteer>> query) {
         if (query.getFilter().isPresent()) {
@@ -45,6 +50,30 @@ public class VolunteerService {
         List<AreaSelectorDTO> dtos = new ArrayList<>();
         selectors.forEach(selector -> dtos.add(AreaSelectorDTO.fromAreaSelector(selector)));
         return dtos;
+    }
+
+    public void saveVolunteer(VolunteerDTO volunteerDTO) {
+        Volunteer toSave = volunteerDTO.getId()==0 ? new Volunteer() : volunteerRepository.findOne(volunteerDTO.getId());
+        volunteerDTO.populateVolunteer(toSave);
+        Volunteer saved = volunteerRepository.save(toSave);
+        VolunteerAreaAssigner assigner = new VolunteerAreaAssigner(saved);
+        assigner.assign(volunteerDTO.getAreas().values());
+        volunteerRepository.save(saved);
+    }
+
+    public List<VolunteerSessionDTO> getSessions(int volunteerId) {
+        Volunteer volunteer = volunteerRepository.findOne(volunteerId);
+        List<VolunteerSession> volunteerSessions = new ArrayList<>(volunteer.getSessions());
+        List<VolunteerSessionDTO> result = new ArrayList<>();
+        volunteerSessions.forEach(volunteerSession -> {
+            VolunteerSessionDTO dto = VolunteerSessionDTO.create(volunteerSession);
+            AssignedCounts counts = assignedCountRepository.findByIdAreaIdAndIdSessionId(volunteerSession.getArea().getId(), volunteerSession.getSession().getId());
+            dto.setStaffAssigned(counts.getAssigned());
+            dto.setStaffRequired(counts.getRequired());
+            dto.setTokensDue(0);
+            result.add(dto);
+        });
+        return result;
     }
 
     private List<VolunteerDTO> toDTOs(Iterable<Volunteer> volunteers) {
@@ -76,4 +105,28 @@ public class VolunteerService {
         return sortDirection==SortDirection.ASCENDING ? Direction.ASC : Direction.DESC;
     }
 
+    private class VolunteerAreaAssigner {
+
+        private Volunteer volunteer;
+        private AssignableArea unassigned = assignableAreaRepository.getUnassigned();
+
+        private VolunteerAreaAssigner(Volunteer volunteer) {
+            this.volunteer = volunteer;
+        }
+
+        public void assign(Collection<AreaSelectorDTO> areas) {
+            areas.forEach(this::assignToFormArea);
+        }
+
+        private void assignToFormArea(AreaSelectorDTO areaSelectorDTO) {
+            assignableAreaRepository.findByFormAreaId(areaSelectorDTO.getAreaId()).forEach(area -> {
+                if (areaSelectorDTO.getPreference()==Preference.No) {
+                    volunteer.removeArea(area, unassigned);
+                } else {
+                    volunteer.addArea(area, areaSelectorDTO.getPreference());
+                }
+            });
+        }
+
+    }
 }
