@@ -26,5 +26,15 @@ public class AssignmentSelectorDTO {
         return dto;
     }
 
+    public void removeAssignment() {
+        this.staffAssigned--;
+        this.current = false;
+    }
+
+    public void addAssignment() {
+        this.staffAssigned++;
+        this.current = true;
+    }
+
 }
 

@@ -7,6 +7,7 @@ import com.vaadin.navigator.Navigator;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.spring.annotation.SpringUI;
+import com.vaadin.ui.Notification;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.themes.ValoTheme;
 import org.camra.staffing.ui.layouts.MainLayoutLogic;
@@ -45,5 +46,9 @@ public class AdminUI extends UI implements ViewChangeListener {
     @Override
     public boolean beforeViewChange(ViewChangeEvent event) {
         return true;
+    }
+
+    public void update(Object o) {
+        Notification.show("Update : "+o);
     }
 }

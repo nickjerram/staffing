@@ -4,13 +4,11 @@ import com.vaadin.data.provider.Query;
 import com.vaadin.data.provider.QuerySortOrder;
 import com.vaadin.shared.data.sort.SortDirection;
 import org.camra.staffing.data.dto.AreaSelectorDTO;
+import org.camra.staffing.data.dto.AssignmentSelectorDTO;
 import org.camra.staffing.data.dto.VolunteerDTO;
 import org.camra.staffing.data.dto.VolunteerSessionDTO;
 import org.camra.staffing.data.entity.*;
-import org.camra.staffing.data.repository.AreaSelectorRepository;
-import org.camra.staffing.data.repository.AssignableAreaRepository;
-import org.camra.staffing.data.repository.AssignedCountRepository;
-import org.camra.staffing.data.repository.VolunteerRepository;
+import org.camra.staffing.data.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.data.domain.Sort.Order;
@@ -28,12 +26,14 @@ public class VolunteerService {
     @Autowired private AreaSelectorRepository areaSelectorRepository;
     @Autowired private AssignableAreaRepository assignableAreaRepository;
     @Autowired private AssignedCountRepository assignedCountRepository;
+    @Autowired private SessionRepository sessionRepository;
+    @Autowired private VolunteerSessionRepository volunteerSessionRepository;
 
     public List<VolunteerDTO> getVolunteers(Query<VolunteerDTO,Example<Volunteer>> query) {
         if (query.getFilter().isPresent()) {
-            return toDTOs(volunteerRepository.findAll(query.getFilter().get(), pageRequest(query)));
+            return toDTOs(volunteerRepository.findAll(query.getFilter().get(), pageRequest(query, "surname")));
         } else {
-            return toDTOs(volunteerRepository.findAll(pageRequest(query)));
+            return toDTOs(volunteerRepository.findAll(pageRequest(query, "surname")));
         }
     }
 
@@ -61,11 +61,10 @@ public class VolunteerService {
         volunteerRepository.save(saved);
     }
 
-    public List<VolunteerSessionDTO> getSessions(int volunteerId) {
-        Volunteer volunteer = volunteerRepository.findOne(volunteerId);
-        List<VolunteerSession> volunteerSessions = new ArrayList<>(volunteer.getSessions());
+    public List<VolunteerSessionDTO> getSessions(int volunteerId, Query<VolunteerSessionDTO,Void> query) {
+        List<VolunteerSession> vss = volunteerSessionRepository.findByIdVolunteerId(volunteerId, pageRequest(query, "SessionStart"));
         List<VolunteerSessionDTO> result = new ArrayList<>();
-        volunteerSessions.forEach(volunteerSession -> {
+        vss.forEach(volunteerSession -> {
             VolunteerSessionDTO dto = VolunteerSessionDTO.create(volunteerSession);
             AssignedCounts counts = assignedCountRepository.findByIdAreaIdAndIdSessionId(volunteerSession.getArea().getId(), volunteerSession.getSession().getId());
             dto.setStaffAssigned(counts.getAssigned());
@@ -74,6 +73,38 @@ public class VolunteerService {
             result.add(dto);
         });
         return result;
+    }
+
+    public int countSessions(int volunteerId) {
+        return (int) volunteerSessionRepository.countByIdVolunteerId(volunteerId);
+    }
+
+    public List<AssignmentSelectorDTO> getPossibleReassignments(VolunteerSessionDTO volunteerSession) {
+        Volunteer volunteer = volunteerRepository.findOne(volunteerSession.getVolunteerId());
+        List<VolunteerArea> areas = volunteer.getAreas();
+        List<AssignmentSelectorDTO> result = new ArrayList<>();
+        for (VolunteerArea volunteerArea: areas) {
+            AssignedCounts counts = assignedCountRepository.findByIdAreaIdAndIdSessionId(volunteerArea.getAssignableArea().getId(), volunteerSession.getSessionId());
+            AssignmentSelectorDTO dto = AssignmentSelectorDTO.populateFields(volunteerArea);
+            dto.setCurrent(volunteerSession.getAreaId()==volunteerArea.getAssignableArea().getId());
+            dto.setStaffAssigned(counts.getAssigned());
+            dto.setStaffRequired(counts.getRequired());
+            result.add(dto);
+        }
+        return result;
+    }
+
+    public void saveAssignment(VolunteerSessionDTO volunteerSession) {
+        Volunteer v = volunteerRepository.findOne(volunteerSession.getVolunteerId());
+        Session session = sessionRepository.findOne(volunteerSession.getSessionId());
+        AssignableArea area = assignableAreaRepository.findOne(volunteerSession.getAreaId());
+        VolunteerSession vs = v.getSessionMap().get(volunteerSession.getSessionId());
+        vs.setLocked(volunteerSession.isLock());
+        vs.setWorked(volunteerSession.isWorked());
+        vs.setTokens(volunteerSession.getTokens());
+        vs.setComment(volunteerSession.getComment());
+        v.reassign(area, session);
+        volunteerRepository.saveAndFlush(v);
     }
 
     private List<VolunteerDTO> toDTOs(Iterable<Volunteer> volunteers) {
@@ -87,18 +118,19 @@ public class VolunteerService {
      * @param query
      * @return Page Request
      */
-    private Pageable pageRequest(Query<?, ?> query) {
+    private Pageable pageRequest(Query<?, ?> query, String defaultSort) {
         List<Order> springSorts = new ArrayList<>();
         for (QuerySortOrder sortOrder : query.getSortOrders()) {
             springSorts.add(new Order(direction(sortOrder.getDirection()), sortOrder.getSorted()));
         }
         if (springSorts.isEmpty()) {
-            springSorts.add(new Order(Direction.ASC, "surname"));
+            springSorts.add(new Order(Direction.ASC, defaultSort));
         }
         Sort finalSort = new Sort(springSorts);
 
         int pageNumber = query.getOffset() / query.getLimit();
-        return new PageRequest(pageNumber, query.getLimit(), finalSort);
+        return
+                new PageRequest(pageNumber, query.getLimit(), finalSort);
     }
 
     private Direction direction(SortDirection sortDirection) {
