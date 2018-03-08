@@ -14,22 +14,29 @@ import org.camra.staffing.data.entity.Volunteer;
 import org.camra.staffing.data.entity.VolunteerSession;
 import org.camra.staffing.data.service.VolunteerService;
 import org.camra.staffing.ui.grids.ReassignmentGrid;
+import org.camra.staffing.ui.grids.SessionSelectorGrid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Scope;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-@UIScope
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @SpringComponent
 public class VolunteerSessionFormLogic extends VolunteerSessionForm {
 
     @Autowired private AdminUI ui;
-    @Autowired private ReassignmentGrid reassignmentGrid;
     @Autowired private VolunteerService volunteerService;
+    @Autowired private ApplicationContext context;
+    private ReassignmentGrid reassignmentGrid;
+    private SessionSelectorGrid sessionSelectorGrid;
     private AssignmentSelectorDTO newAssignment;
     private VolunteerSessionDTO volunteerSession;
+    private VolunteerDTO volunteer;
     private Binder<VolunteerSessionDTO> binder = new Binder<>(VolunteerSessionDTO.class);
     private Optional<Consumer<VolunteerSessionDTO>> saveHandler = Optional.empty();
 
@@ -40,10 +47,28 @@ public class VolunteerSessionFormLogic extends VolunteerSessionForm {
         binder.forField(tokens).withConverter(new StringToIntegerConverter(("Must be an integer")))
                 .bind(VolunteerSessionDTO::getTokens, VolunteerSessionDTO::setTokens);
         binder.forField(comment).bind(VolunteerSessionDTO::getComment, VolunteerSessionDTO::setComment);
-        binder.forField(locked).bind(VolunteerSessionDTO::isLock, VolunteerSessionDTO::setLock);
+        binder.forField(locked).bind(VolunteerSessionDTO::isLocked, VolunteerSessionDTO::setLocked);
         binder.addStatusChangeListener(event -> save.setEnabled(!event.hasValidationErrors() && binder.hasChanges()));
         cancel.addClickListener(event -> removeStyleName("visible"));
+        save.setEnabled(false);
         save.addClickListener(event -> save());
+    }
+
+    public void newSession(VolunteerDTO volunteer) {
+        this.volunteer = volunteer;
+        title.setValue(volunteer.getForename()+" "+volunteer.getSurname());
+        subtitle.setValue("New Session");
+        sessionSelectorGrid = context.getBean(SessionSelectorGrid.class);
+        sessionSelectorGrid.setVisible(true);
+        sessionSelectorGrid.setVolunteerId(volunteer.getId());
+        sessionSelectorGrid.setChangeHandler(this::sessionsChanged);
+        formLayout.addComponent(sessionSelectorGrid, 4);
+        formLayout.setExpandRatio(sessionSelectorGrid, 1);
+        addStyleName("visible");
+    }
+
+    private void sessionsChanged(Void aVoid) {
+        save.setEnabled(true);
     }
 
 
@@ -52,6 +77,8 @@ public class VolunteerSessionFormLogic extends VolunteerSessionForm {
         binder.readBean(volunteerSession);
         title.setValue(volunteerSession.getForename()+" "+volunteerSession.getSurname());
         subtitle.setValue(volunteerSession.getSessionName());
+        reassignmentGrid = context.getBean(ReassignmentGrid.class);
+        reassignmentGrid.setVisible(true);
         reassignmentGrid.setSizeFull();
         reassignmentGrid.setItems(options);
         reassignmentGrid.setReassignmentHandler(this::reassign);
@@ -70,10 +97,13 @@ public class VolunteerSessionFormLogic extends VolunteerSessionForm {
     }
 
     private void save() {
-        binder.writeBeanIfValid(volunteerSession);
-        volunteerSession.setAreaId(newAssignment.getAreaId());
-        volunteerService.saveAssignment(volunteerSession);
-        ui.update(volunteerSession);
+        if (volunteerSession!=null) {
+            binder.writeBeanIfValid(volunteerSession);
+            volunteerSession.setAreaId(newAssignment.getAreaId());
+            volunteerService.saveAssignment(volunteerSession);
+        } else if (volunteer!=null) {
+            volunteerService.saveVolunteerSession(volunteer.getId(), sessionSelectorGrid.getNewSessions());
+        }
         removeStyleName("visible");
         saveHandler.ifPresent(h -> h.accept(volunteerSession));
     }

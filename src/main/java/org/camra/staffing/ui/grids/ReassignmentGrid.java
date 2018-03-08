@@ -7,12 +7,14 @@ import com.vaadin.ui.Grid;
 import com.vaadin.ui.renderers.HtmlRenderer;
 import org.camra.staffing.data.dto.AssignmentSelectorDTO;
 import org.camra.staffing.data.entity.Preference;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.function.Consumer;
 
-@UIScope
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @SpringComponent
 public class ReassignmentGrid extends Grid<AssignmentSelectorDTO> {
 
@@ -34,7 +36,7 @@ public class ReassignmentGrid extends Grid<AssignmentSelectorDTO> {
 
     public void setItems(List<AssignmentSelectorDTO> items) {
         items.forEach(item -> {
-            if(item.isCurrent()) {
+            if(item.isSelected()) {
                 currentAssignment = item;
             }
         });
@@ -55,13 +57,13 @@ public class ReassignmentGrid extends Grid<AssignmentSelectorDTO> {
     }
 
     private String formatRatio(AssignmentSelectorDTO selection) {
-        return Columns.formatRatio(selection.getStaffAssigned(), selection.getStaffRequired());
+        return Columns.formatRatio(selection.getAssigned(), selection.getRequired());
     }
 
     private String formatArea(AssignmentSelectorDTO selection) {
-        String preference = Columns.getIconCode("#ff0",selection.getAreaPreference()== Preference.Yes ? VaadinIcons.STAR : null);
-        String current = Columns.getIconCode("#0a0",selection.isCurrent() ? VaadinIcons.CHECK_SQUARE : null);
-        return preference+current+" "+selection.getAreaName();
+        String preference = Columns.getIconCode("#ff0",selection.getPreference()== Preference.Yes ? VaadinIcons.STAR : null);
+        String current = Columns.getIconCode("#0a0",selection.isSelected() ? VaadinIcons.CHECK_SQUARE : null);
+        return preference+current+" "+selection.getName();
     }
 
 }

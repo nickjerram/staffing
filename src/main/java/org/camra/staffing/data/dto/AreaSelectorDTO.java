@@ -23,7 +23,7 @@ public class AreaSelectorDTO {
         return areaId;
     }
 
-    public static AreaSelectorDTO fromAreaSelector(AreaSelector as) {
+    public static AreaSelectorDTO create(AreaSelector as) {
         AreaSelectorDTO dto = new AreaSelectorDTO();
         dto.areaId = as.getId().getAreaId();
         dto.areaName = as.getName();

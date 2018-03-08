@@ -41,10 +41,17 @@ public class VolunteerDTO {
         id = 0;
     }
 
-    /**
-     * Construct a DTO from the specified Volunteer
-     * @param volunteer
-     */
+    public static VolunteerDTO create(Volunteer volunteer) {
+        VolunteerDTO dto = new VolunteerDTO();
+        BeanUtils.copyProperties(volunteer, dto);
+        dto.totalSessions = volunteer.getSessions().size();
+        for (VolunteerSession session : volunteer.getSessions()) {
+            if (session.getArea().getId()!=-1) dto.assignedSessions++;
+            if (session.isWorked()) dto.worked++;
+        }
+        return dto;
+    }
+
     public VolunteerDTO(Volunteer volunteer) {
         BeanUtils.copyProperties(volunteer, this);
         totalSessions = volunteer.getSessions().size();

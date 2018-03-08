@@ -41,13 +41,13 @@ public class VolunteerSessionGrid extends MainGrid<VolunteerSessionDTO> {
     }
 
     private String formatEditForVolunteer(VolunteerSessionDTO assignment) {
-        VaadinIcons icon = assignment.isLock() ? VaadinIcons.LOCK : VaadinIcons.EDIT;
+        VaadinIcons icon = assignment.isLocked() ? VaadinIcons.LOCK : VaadinIcons.EDIT;
         return Columns.getIconCode("#0c0", icon);
     }
 
     protected String formatEditForSession(VolunteerSessionDTO assignment) {
-        VaadinIcons icon = assignment.isLock() ? VaadinIcons.LOCK : VaadinIcons.EDIT;
-        String colour = assignment.isLock() ? "#c00" : "#0c0";
+        VaadinIcons icon = assignment.isLocked() ? VaadinIcons.LOCK : VaadinIcons.EDIT;
+        String colour = assignment.isLocked() ? "#c00" : "#0c0";
         return Columns.getIconCode(colour, icon);
     }
 
@@ -64,7 +64,7 @@ public class VolunteerSessionGrid extends MainGrid<VolunteerSessionDTO> {
     }
 
     private String formatAssigned(VolunteerSessionDTO assignment) {
-        return Columns.formatRatio(assignment.getStaffAssigned(), assignment.getStaffRequired());
+        return Columns.formatRatio(assignment.getAssigned(), assignment.getRequired());
     }
 
     private String formatTime(Date time) {
