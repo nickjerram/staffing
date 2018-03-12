@@ -12,4 +12,8 @@ public interface AssignableAreaRepository extends JpaRepository<AssignableArea, 
     default AssignableArea getUnassigned() {
         return findOne(-1);
     }
+
+    default AssignableArea getNotWorking() {
+        return findOne(0);
+    }
 }

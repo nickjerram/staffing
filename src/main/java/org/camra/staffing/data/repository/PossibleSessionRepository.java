@@ -1,6 +1,5 @@
 package org.camra.staffing.data.repository;
 
-import javafx.geometry.Pos;
 import org.camra.staffing.data.entity.PossibleSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 

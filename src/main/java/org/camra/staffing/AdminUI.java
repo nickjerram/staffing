@@ -17,7 +17,7 @@ import org.camra.staffing.ui.views.VolunteerView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 
-@SpringUI
+@SpringUI(path="/admin")
 @Theme("mytheme")
 @Viewport("user-scalable=no,initial-scale=1.0")
 public class AdminUI extends UI implements ViewChangeListener {

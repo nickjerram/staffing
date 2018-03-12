@@ -107,8 +107,6 @@ public class VolunteerService {
 
     /**
      * Convert the Sorting and Paging components of a Vaadin Query into a Spring JPA PageRequest
-     * @param query
-     * @return Page Request
      */
     private Pageable pageRequest(Query<?, ?> query, String defaultSort) {
         List<Order> springSorts = new ArrayList<>();
@@ -132,7 +130,6 @@ public class VolunteerService {
     private class VolunteerAreaAssigner {
 
         private Volunteer volunteer;
-        private AssignableArea unassigned = assignableAreaRepository.getUnassigned();
 
         private VolunteerAreaAssigner(Volunteer volunteer) {
             this.volunteer = volunteer;
@@ -145,11 +142,13 @@ public class VolunteerService {
         private void assignToFormArea(AreaSelectorDTO areaSelectorDTO) {
             assignableAreaRepository.findByFormAreaId(areaSelectorDTO.getAreaId()).forEach(area -> {
                 if (areaSelectorDTO.getPreference()==Preference.No) {
-                    volunteer.removeArea(area, unassigned);
+                    volunteer.removeArea(area, assignableAreaRepository.getUnassigned());
                 } else {
                     volunteer.addArea(area, areaSelectorDTO.getPreference());
                 }
             });
+            volunteer.addArea(assignableAreaRepository.getNotWorking(), Preference.DontMind);
+            volunteer.addArea(assignableAreaRepository.getUnassigned(), Preference.DontMind);
         }
 
     }
