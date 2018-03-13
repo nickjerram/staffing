@@ -1,1 +1,1 @@
-web: java -jar target/staffing-2018.jar -Dspring.profiles.active=live
+web: java -jar target/staffing-2018.jar
