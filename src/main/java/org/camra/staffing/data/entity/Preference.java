@@ -1,6 +1,15 @@
 package org.camra.staffing.data.entity;
 
+import lombok.Getter;
+
 public enum Preference {
 	
-	No,DontMind,Yes;
+	No("No"),DontMind("Don't Mind"),Yes("Yes");
+
+	@Getter private String caption;
+
+	Preference(String caption) {
+	    this.caption = caption;
+    }
+
 }

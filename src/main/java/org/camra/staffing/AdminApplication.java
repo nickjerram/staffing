@@ -18,6 +18,7 @@ import java.util.Map;
 public class AdminApplication extends JpaBaseConfiguration {
 
     public static void main(String[] args) {
+        System.setProperty("spring.profiles.default", "dev");
         SpringApplication.run(AdminApplication.class, args);
     }
 

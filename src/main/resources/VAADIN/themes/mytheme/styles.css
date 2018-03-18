@@ -10926,7 +10926,7 @@ div.v-layout.v-horizontal.v-widget {
 .mytheme h1, .mytheme .v-label-h1, .mytheme h2, .mytheme .v-label-h2, .mytheme h3, .mytheme .v-label-h3 {
 	line-height: 1.1;
 	font-weight: 300;
-	color: #141414;
+	xcolor: #141414;
 }
 
 .mytheme h1, .mytheme .v-label-h1 {
@@ -12444,6 +12444,10 @@ div.v-layout.v-horizontal.v-widget {
 	animation: valo-animate-in-fade 1s backwards;
 }
 
+wrapped-label {
+    word-wrap: break-word !important;
+}
+
 .mytheme .login-screen .login-information {
 	display: inline-block;
 	position: absolute;
@@ -12451,10 +12455,10 @@ div.v-layout.v-horizontal.v-widget {
 	left: 0;
 	width: 300px;
 	height: 100%;
-	background: #60a0ea;
-	background-color: rgba(96, 160, 234, 0.7);
+	background: #772605;
+	background-color: rgba(50, 50, 50, 0.7);
 	padding: 21px 21px 21px 21px;
-	color: #f2f6fa;
+	color: #f2f6fa !important;
 	-webkit-animation: valo-animate-in-fade 1s 1s backwards;
 	-moz-animation: valo-animate-in-fade 1s 1s backwards;
 	animation: valo-animate-in-fade 1s 1s backwards;
