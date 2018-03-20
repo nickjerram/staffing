@@ -1,25 +1,29 @@
 package org.camra.staffing.ui.volunteer.forms;
 
 import com.vaadin.icons.VaadinIcons;
+import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
-import com.vaadin.ui.ComboBox;
-import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Label;
-import com.vaadin.ui.TextField;
+import com.vaadin.ui.*;
+import org.camra.staffing.data.dto.AssignedCountsDTO;
 import org.camra.staffing.data.dto.SessionDTO;
+import org.camra.staffing.data.entity.AssignedCounts;
 import org.camra.staffing.data.entity.FormArea;
 import org.camra.staffing.data.entity.Preference;
 import org.camra.staffing.data.entity.Session;
 import org.camra.staffing.data.repository.FormAreaRepository;
 import org.camra.staffing.data.repository.SessionRepository;
+import org.camra.staffing.data.service.AssignedCountsService;
 import org.camra.staffing.data.service.SessionService;
 import org.camra.staffing.ui.admin.grids.Columns;
 import org.camra.staffing.util.CamraMember;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,10 +34,16 @@ import static java.util.stream.Collectors.toList;
 @UIScope
 public class ApplicationFormLogic extends ApplicationForm {
 
+    private static final DateTimeFormatter DAY_FORMAT = DateTimeFormatter.ofPattern("EEEE dd MMM");
+    private static final String[] colours = {"#33af33","#5daf35","#88b038","#b8ba35","#e7c333","#dfa533","#d68533","#ae5c33","#853333"};
+
     @Autowired private FormAreaRepository formAreaRepository;
     @Autowired private SessionService sessionService;
+    @Autowired private AssignedCountsService assignedCountsService;
     private Map<Integer,ComboBox<Preference>> areaSelectors= new HashMap<>();
     private Map<LocalDate, List<SessionDTO>> sessionMap;
+    private Map<Integer,CheckBox> sessionSelectors = new HashMap<>();
+    private Map<Integer, List<AssignedCountsDTO>> counts;
 
     @PostConstruct
     private void init() {
@@ -60,6 +70,9 @@ public class ApplicationFormLogic extends ApplicationForm {
     }
 
     public void setMember(CamraMember member) {
+        membershipLabel.setVisible(false);
+        membershipFields.setVisible(false);
+        membership.setVisible(true);
         setValue(forename, member.getForename());
         setValue(surname, member.getSurname());
         setValue(membership, member.getNumber());
@@ -72,15 +85,42 @@ public class ApplicationFormLogic extends ApplicationForm {
     }
 
     private void doSessions() {
+        counts = assignedCountsService.getCountsBySession();
         sessionMap = sessionService.getSessionMap();
         sessionMap.keySet().forEach(this::createDay);
     }
 
     private void createDay(LocalDate localDate) {
-        HorizontalLayout dayLane = new HorizontalLayout();
-        dayLane.addComponent(new Label("Day "+localDate));
-        sessionMap.get(localDate).forEach(session -> dayLane.addComponent(new Label(session.getStartTime()+"--"+ session.getFinishTime())));
+        CssLayout dayLane = new CssLayout();
+        dayLane.setWidth("100%");
+        Label dayLabel = new Label(DAY_FORMAT.format(localDate));
+        dayLabel.setWidth("20%");
+        dayLane.addComponent(dayLabel);
+        sessionMap.get(localDate).forEach(session -> dayLane.addComponent(createSession(session)));
         sessions.addComponent(dayLane);
+    }
+
+    private HorizontalLayout createSession(SessionDTO session) {
+        List<AssignedCountsDTO> countForSession = counts.get(session.getId());
+        int totalAssigned = countForSession.stream().mapToInt(AssignedCountsDTO::getAssigned).sum();
+        int totalRequired = countForSession.stream().mapToInt(AssignedCountsDTO::getRequired).sum();
+
+        String icon = getIcon(totalAssigned, totalRequired);
+        Label label = new Label(session.getDescription()+icon);
+        label.setContentMode(ContentMode.HTML);
+        HorizontalLayout layout = new HorizontalLayout();
+        CheckBox box = new CheckBox();
+        sessionSelectors.put(session.getId(), box);
+        layout.addComponents(label, box);
+        return layout;
+    }
+
+    private String getIcon(int assigned, int required) {
+        double ratio = (double)assigned / (double)required;
+        ratio = Math.pow(ratio, 2);
+        int r = (int)(ratio*8);
+        r = r>8 ? 8 : r;
+        return Columns.getIconCode(colours[r], VaadinIcons.CIRCLE);
     }
 
 

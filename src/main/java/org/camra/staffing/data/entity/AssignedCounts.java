@@ -16,13 +16,6 @@ public class AssignedCounts extends StaffingEntity<AssignedCounts.ID> {
 	@Getter private int assigned;	
 	@Getter private int worked;
 	
-	public AssignedCounts() {}
-	
-	public AssignedCounts(int top, int bottom) {
-		this.assigned = top;
-		this.required = bottom;
-	}
-	
 	@Embeddable @Data
     public static class ID implements Serializable {
 		private static final long serialVersionUID = -5496026683277772825L;
