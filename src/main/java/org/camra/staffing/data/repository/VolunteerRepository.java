@@ -8,7 +8,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.repository.query.QueryByExampleExecutor;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface VolunteerRepository extends JpaRepository<Volunteer, Integer>, QueryByExampleExecutor<Volunteer> {
 
+    Optional<Volunteer> findByUuid(String uuid);
 }

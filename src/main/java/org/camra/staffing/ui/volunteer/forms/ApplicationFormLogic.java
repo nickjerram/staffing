@@ -1,5 +1,6 @@
 package org.camra.staffing.ui.volunteer.forms;
 
+import com.vaadin.data.BeanValidationBinder;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.spring.annotation.SpringComponent;
@@ -7,14 +8,13 @@ import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.*;
 import org.camra.staffing.data.dto.AssignedCountsDTO;
 import org.camra.staffing.data.dto.SessionDTO;
-import org.camra.staffing.data.entity.AssignedCounts;
-import org.camra.staffing.data.entity.FormArea;
-import org.camra.staffing.data.entity.Preference;
-import org.camra.staffing.data.entity.Session;
+import org.camra.staffing.data.dto.VolunteerDTO;
+import org.camra.staffing.data.entity.*;
 import org.camra.staffing.data.repository.FormAreaRepository;
 import org.camra.staffing.data.repository.SessionRepository;
 import org.camra.staffing.data.service.AssignedCountsService;
 import org.camra.staffing.data.service.SessionService;
+import org.camra.staffing.data.service.VolunteerService;
 import org.camra.staffing.ui.admin.grids.Columns;
 import org.camra.staffing.util.CamraMember;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,10 +40,12 @@ public class ApplicationFormLogic extends ApplicationForm {
     @Autowired private FormAreaRepository formAreaRepository;
     @Autowired private SessionService sessionService;
     @Autowired private AssignedCountsService assignedCountsService;
+    @Autowired private VolunteerService volunteerService;
     private Map<Integer,ComboBox<Preference>> areaSelectors= new HashMap<>();
     private Map<LocalDate, List<SessionDTO>> sessionMap;
     private Map<Integer,CheckBox> sessionSelectors = new HashMap<>();
     private Map<Integer, List<AssignedCountsDTO>> counts;
+    BeanValidationBinder<VolunteerDTO> binder = new BeanValidationBinder<>(VolunteerDTO.class);
 
     @PostConstruct
     private void init() {
@@ -67,6 +69,21 @@ public class ApplicationFormLogic extends ApplicationForm {
         level7.setValue(Columns.getIconCode("#ae5c33", VaadinIcons.CIRCLE));
         level8.setValue(Columns.getIconCode("#853333", VaadinIcons.CIRCLE));
         doSessions();
+        bindFields();
+    }
+
+    private void bindFields() {
+        binder.forField(forename).bind("forename");
+        binder.forField(surname).bind("surname");
+        binder.forField(email).bind("email");
+        binder.forField(enterMembership).bind("membership");
+        binder.forField(manager).bind("managervouch");
+    }
+
+    public boolean setUUID(String uuid) {
+        Optional<VolunteerDTO> volunteerDTO = volunteerService.getVolunteer(uuid);
+        volunteerDTO.ifPresent(volunteer -> binder.readBean(volunteer));
+        return volunteerDTO.isPresent();
     }
 
     public void setMember(CamraMember member) {

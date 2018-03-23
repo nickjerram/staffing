@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +39,10 @@ public class VolunteerService {
             queryResult = volunteerRepository.findAll(pageRequest(query, "surname"));
         }
         return queryResult.getContent().stream().map(VolunteerDTO::create).collect(Collectors.toList());
+    }
+
+    public Optional<VolunteerDTO> getVolunteer(String uuid) {
+        return volunteerRepository.findByUuid(uuid).map(VolunteerDTO::create);
     }
 
     public int countVolunteers(Query<VolunteerDTO,Example<Volunteer>> query) {

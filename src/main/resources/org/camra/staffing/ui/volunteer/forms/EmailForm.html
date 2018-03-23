@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="design-properties" content="{&quot;RULERS_VISIBLE&quot;:true,&quot;GUIDELINES_VISIBLE&quot;:false,&quot;SNAP_TO_OBJECTS&quot;:true,&quot;SNAP_TO_GRID&quot;:true,&quot;SNAPPING_DISTANCE&quot;:10,&quot;GENERATE_GETTERS&quot;:false,&quot;JAVA_SOURCES_ROOT&quot;:&quot;src/main/java&quot;,&quot;THEME&quot;:&quot;mytheme&quot;}">
+  <meta name="vaadin-version" content="8.0.5">
+ </head>
+ <body>
+  <vaadin-vertical-layout size-auto>
+   <vaadin-form-layout size-auto _id="emailForm">
+    <vaadin-label visible="false" style-name="failure" width-full _id="errors"></vaadin-label>
+    <vaadin-text-field caption="Forename" width="15em" _id="forename"></vaadin-text-field>
+    <vaadin-text-field caption="Surname" width="15em" _id="surname"></vaadin-text-field>
+    <vaadin-text-field caption="Email Address" width="15em" _id="email"></vaadin-text-field>
+    <vaadin-text-field caption="Confirm Email Address" width="15em" _id="confirmEmail"></vaadin-text-field>
+    <vaadin-css-layout caption="I'm not a robot" _id="captchaContainer"></vaadin-css-layout>
+    <vaadin-text-field caption="What words do you see?" _id="captchaVerify"></vaadin-text-field>
+    <vaadin-css-layout style-name="buttons">
+     <vaadin-button style-name="friendly" plain-text _id="submit">
+       Confirm Email Address 
+     </vaadin-button>
+    </vaadin-css-layout>
+   </vaadin-form-layout>
+  </vaadin-vertical-layout>
+ </body>
+</html>

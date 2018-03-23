@@ -30,8 +30,7 @@ public class VolunteerView extends ViewLayout implements StaffingView {
     }
 
     @PostConstruct
-    @SuppressWarnings("unused")
-    void init() {
+    private void init() {
 
         title.setValue("Volunteer View");
         closeButton.setVisible(false);

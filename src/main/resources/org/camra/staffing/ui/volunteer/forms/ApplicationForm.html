@@ -6,146 +6,132 @@
   <meta name="vaadin-version" content="8.0.5">
  </head>
  <body>
-  <vaadin-css-layout style-name="login-screen" size-full>
-   <vaadin-vertical-layout style-name="centering-layout" spacing="false" size-full margin="false">
-    <vaadin-panel style-name="login-form" width="80%" height="80%" :middle :center>
-     <vaadin-vertical-layout spacing="false" margin-left="false" margin-right="false" margin-top="false">
-      <vaadin-label style-name="h1" width-full plain-text>
-        Label 
-      </vaadin-label>
-      <vaadin-label style-name="h2" plain-text>
-        Personal Details 
-      </vaadin-label>
-      <vaadin-label caption-as-html style-name="wrapped-label" width-full>
-        We'll only use your personal details to contact you about Reading Beer and Cider Festival 
-       <br> We'll never pass your details to anyone else without your permission 
-       <br> Your details will be kept until the Staffing Form for 2019 is available, unless you instruct us to delete them earlier. 
-      </vaadin-label>
-      <vaadin-horizontal-layout width-full>
-       <vaadin-form-layout>
-        <vaadin-text-field caption="Forename:" width-full _id="forename"></vaadin-text-field>
-        <vaadin-text-field visible="false" caption="Membership Number:" width-full _id="membership"></vaadin-text-field>
-       </vaadin-form-layout>
-       <vaadin-form-layout>
-        <vaadin-text-field caption="Surname:" width-full _id="surname"></vaadin-text-field>
-        <vaadin-text-field caption="Email Address:" width-full _id="email"></vaadin-text-field>
-       </vaadin-form-layout>
-      </vaadin-horizontal-layout>
-      <vaadin-label width-full plain-text _id="membershipLabel">
-        Normally, volunteers must be CAMRA members. However, we do accept some non-members if they are personally known by one of the Beer Festival Organising Team. If you are a member, please enter your membership Number, otherwise, please enter the name of the Beer Festival Organising Team Member who knows you 
-      </vaadin-label>
-      <vaadin-horizontal-layout width-full _id="membershipFields">
-       <vaadin-form-layout>
-        <vaadin-text-field caption="Membership Number:" width-full _id="enterMembership"></vaadin-text-field>
-       </vaadin-form-layout>
-       <vaadin-form-layout>
-        <vaadin-text-field caption="or Beer Festival Contact:" width-full _id="manager"></vaadin-text-field>
-       </vaadin-form-layout>
-      </vaadin-horizontal-layout>
-      <vaadin-label style-name="h2" plain-text>
-        Skills and Qualifications 
-      </vaadin-label>
-      <vaadin-label width-full>
-        If you have any relevant skills or qualifications, please let us know 
-       <br> Do not worry if you do not hold any of these skills or qualifications, this is not a requirement 
-      </vaadin-label>
-      <vaadin-horizontal-layout width-full>
-       <vaadin-form-layout size-auto>
-        <vaadin-check-box caption="SIA" _id="sia"></vaadin-check-box>
-        <vaadin-check-box caption="Fork-lift truck driving" _id="forklift"></vaadin-check-box>
-       </vaadin-form-layout>
-       <vaadin-form-layout size-auto>
-        <vaadin-check-box caption="First Aid" _id="firstaid"></vaadin-check-box>
-        <vaadin-check-box caption="Beer Cellar Management" _id="cellar"></vaadin-check-box>
-       </vaadin-form-layout>
-      </vaadin-horizontal-layout>
-      <vaadin-label style-name="h2" plain-text>
-        Choose Your Areas 
-      </vaadin-label>
-      <vaadin-label width-full>
-        There is a range of different jobs to to be done. Please indicate which of these you are interested in volunteering for, and which you do not wish to volunteer for. 
-       <br>
-       <br> If you do 
-       <b>not</b> wish to work in a specific area, please change the appropriate selector to 
-       <b>No</b>
-       <br> If you especially wish to work in a specific area, please change the appropriate selector to 
-       <b>Yes</b>. 
-       <br> We may assign you to work in any Areas which you have selected 
-       <b>Yes</b> or 
-       <b>Don't Mind</b>, although we will try our best to assign you mainly to your 
-       <b>Yes</b> Areas. We will not assign you to 
-       <b>No</b> areas unless we are desperately short and you agree. 
-      </vaadin-label>
-      <vaadin-grid-layout spacing width="75%" margin _id="areas" :center>
-       <row>
-        <column></column>
-        <column></column>
-        <column></column>
-       </row>
-      </vaadin-grid-layout>
-      <vaadin-label style-name="h2" plain-text>
-        Choose Your Sessions 
-      </vaadin-label>
-      <vaadin-label width-full>
-       <p>You may or may not be assigned work on all the sessions you indicate, it depends on how many volunteers are already assigned at those times. We will let you know exactly which session we need you for closer to the Festival.<br><br> In order to try and avoid volunteer overcrowding at quiet times and being short-staffed at busy times, the sessions are colour coded to indicate roughly how many more staff are needed. </p>
-      </vaadin-label>
-      <vaadin-horizontal-layout width="80%" :center>
-       <vaadin-label width-full plain-text>
-         More Volunteers Needed... 
-       </vaadin-label>
-       <vaadin-label plain-text :right>
-         ...Fully Staffed 
-       </vaadin-label>
-      </vaadin-horizontal-layout>
-      <vaadin-horizontal-layout spacing="false" width="80%" :center>
-       <vaadin-label width="40%" _id="level0"></vaadin-label>
-       <vaadin-label width="3%" _id="level1"></vaadin-label>
-       <vaadin-label width="3%" _id="level2"></vaadin-label>
-       <vaadin-label width="3%" _id="level3"></vaadin-label>
-       <vaadin-label width="3%" _id="level4"></vaadin-label>
-       <vaadin-label width="3%" _id="level5"></vaadin-label>
-       <vaadin-label width="3%" _id="level6"></vaadin-label>
-       <vaadin-label width="3%" _id="level7"></vaadin-label>
-       <vaadin-label width="39%" _id="level8"></vaadin-label>
-      </vaadin-horizontal-layout>
-      <vaadin-vertical-layout _id="sessions"></vaadin-vertical-layout>
-      <vaadin-label style-name="h2" plain-text>
-        Any Other Information 
-      </vaadin-label>
-      <vaadin-label width-full plain-text>
-        Here you may provide any other information / requirements, which may be relevant. For example, if you can only work part of a session, or you want to work in the same area as a friend, you should mention it here 
-      </vaadin-label>
-      <vaadin-text-area width-full></vaadin-text-area>
-      <vaadin-label style-name="h2" plain-text>
-        Instructions 
-      </vaadin-label>
-      <vaadin-check-box caption-as-html caption="I have read the instructions for Staff"></vaadin-check-box>
-      <vaadin-label style-name="h2" plain-text>
-        Password 
-      </vaadin-label>
-      <vaadin-label width-full plain-text>
-        Here you may set a password to protect your Staffing Form. You will need to provide this password if you wish to access your Staffing Form again should you need to change it.. 
-      </vaadin-label>
-      <vaadin-form-layout width="75%" margin="false" :center>
-       <vaadin-password-field caption="Password:" _id="password"></vaadin-password-field>
-       <vaadin-password-field caption="Confirm Password:" _id="confirmPassword"></vaadin-password-field>
-       <vaadin-button style-name="friendly" plain-text _id="submit">
-         Volunteer! 
-       </vaadin-button>
-      </vaadin-form-layout>
-     </vaadin-vertical-layout>
-    </vaadin-panel>
+  <vaadin-panel size-full>
+   <vaadin-vertical-layout spacing="false" margin-left="false" margin-right="false" margin-top="false">
+    <vaadin-label style-name="h1" width-full plain-text>
+      Label 
+    </vaadin-label>
+    <vaadin-label style-name="h2" plain-text>
+      Personal Details 
+    </vaadin-label>
+    <vaadin-label caption-as-html style-name="wrapped-label" width-full>
+      We'll only use your personal details to contact you about Reading Beer and Cider Festival 
+     <br> We'll never pass your details to anyone else without your permission 
+     <br> Your details will be kept until the Staffing Form for 2019 is available, unless you instruct us to delete them earlier. 
+    </vaadin-label>
+    <vaadin-horizontal-layout width-full>
+     <vaadin-form-layout>
+      <vaadin-text-field caption="Forename:" width-full _id="forename"></vaadin-text-field>
+      <vaadin-text-field visible="false" caption="Membership Number:" width-full _id="membership"></vaadin-text-field>
+     </vaadin-form-layout>
+     <vaadin-form-layout>
+      <vaadin-text-field caption="Surname:" width-full _id="surname"></vaadin-text-field>
+      <vaadin-text-field caption="Email Address:" width-full _id="email"></vaadin-text-field>
+     </vaadin-form-layout>
+    </vaadin-horizontal-layout>
+    <vaadin-label width-full plain-text _id="membershipLabel">
+      Normally, volunteers must be CAMRA members. However, we do accept some non-members if they are personally known by one of the Beer Festival Organising Team. If you are a member, please enter your membership Number, otherwise, please enter the name of the Beer Festival Organising Team Member who knows you 
+    </vaadin-label>
+    <vaadin-horizontal-layout width-full _id="membershipFields">
+     <vaadin-form-layout>
+      <vaadin-text-field caption="Membership Number:" width-full _id="enterMembership"></vaadin-text-field>
+     </vaadin-form-layout>
+     <vaadin-form-layout>
+      <vaadin-text-field caption="or Beer Festival Contact:" width-full _id="manager"></vaadin-text-field>
+     </vaadin-form-layout>
+    </vaadin-horizontal-layout>
+    <vaadin-label style-name="h2" plain-text>
+      Skills and Qualifications 
+    </vaadin-label>
+    <vaadin-label width-full>
+      If you have any relevant skills or qualifications, please let us know 
+     <br> Do not worry if you do not hold any of these skills or qualifications, this is not a requirement 
+    </vaadin-label>
+    <vaadin-horizontal-layout width-full>
+     <vaadin-form-layout size-auto>
+      <vaadin-check-box caption="SIA" _id="sia"></vaadin-check-box>
+      <vaadin-check-box caption="Fork-lift truck driving" _id="forklift"></vaadin-check-box>
+     </vaadin-form-layout>
+     <vaadin-form-layout size-auto>
+      <vaadin-check-box caption="First Aid" _id="firstaid"></vaadin-check-box>
+      <vaadin-check-box caption="Beer Cellar Management" _id="cellar"></vaadin-check-box>
+     </vaadin-form-layout>
+    </vaadin-horizontal-layout>
+    <vaadin-label style-name="h2" plain-text>
+      Choose Your Areas 
+    </vaadin-label>
+    <vaadin-label width-full>
+      There is a range of different jobs to to be done. Please indicate which of these you are interested in volunteering for, and which you do not wish to volunteer for. 
+     <br>
+     <br> If you do 
+     <b>not</b> wish to work in a specific area, please change the appropriate selector to 
+     <b>No</b>
+     <br> If you especially wish to work in a specific area, please change the appropriate selector to 
+     <b>Yes</b>. 
+     <br> We may assign you to work in any Areas which you have selected 
+     <b>Yes</b> or 
+     <b>Don't Mind</b>, although we will try our best to assign you mainly to your 
+     <b>Yes</b> Areas. We will not assign you to 
+     <b>No</b> areas unless we are desperately short and you agree. 
+    </vaadin-label>
+    <vaadin-grid-layout spacing width="75%" margin _id="areas" :center>
+     <row>
+      <column></column>
+      <column></column>
+      <column></column>
+     </row>
+    </vaadin-grid-layout>
+    <vaadin-label style-name="h2" plain-text>
+      Choose Your Sessions 
+    </vaadin-label>
+    <vaadin-label width-full>
+     <p>You may or may not be assigned work on all the sessions you indicate, it depends on how many volunteers are already assigned at those times. We will let you know exactly which session we need you for closer to the Festival.<br><br> In order to try and avoid volunteer overcrowding at quiet times and being short-staffed at busy times, the sessions are colour coded to indicate roughly how many more staff are needed. </p>
+    </vaadin-label>
+    <vaadin-horizontal-layout width="80%" :center>
+     <vaadin-label width-full plain-text>
+       More Volunteers Needed... 
+     </vaadin-label>
+     <vaadin-label plain-text :right>
+       ...Fully Staffed 
+     </vaadin-label>
+    </vaadin-horizontal-layout>
+    <vaadin-horizontal-layout spacing="false" width="80%" :center>
+     <vaadin-label width="40%" _id="level0"></vaadin-label>
+     <vaadin-label width="3%" _id="level1"></vaadin-label>
+     <vaadin-label width="3%" _id="level2"></vaadin-label>
+     <vaadin-label width="3%" _id="level3"></vaadin-label>
+     <vaadin-label width="3%" _id="level4"></vaadin-label>
+     <vaadin-label width="3%" _id="level5"></vaadin-label>
+     <vaadin-label width="3%" _id="level6"></vaadin-label>
+     <vaadin-label width="3%" _id="level7"></vaadin-label>
+     <vaadin-label width="39%" _id="level8"></vaadin-label>
+    </vaadin-horizontal-layout>
+    <vaadin-vertical-layout _id="sessions"></vaadin-vertical-layout>
+    <vaadin-label style-name="h2" plain-text>
+      Any Other Information 
+    </vaadin-label>
+    <vaadin-label width-full plain-text>
+      Here you may provide any other information / requirements, which may be relevant. For example, if you can only work part of a session, or you want to work in the same area as a friend, you should mention it here 
+    </vaadin-label>
+    <vaadin-text-area width-full></vaadin-text-area>
+    <vaadin-label style-name="h2" plain-text>
+      Instructions 
+    </vaadin-label>
+    <vaadin-check-box caption-as-html caption="I have read the instructions for Staff"></vaadin-check-box>
+    <vaadin-label style-name="h2" plain-text>
+      Password 
+    </vaadin-label>
+    <vaadin-label width-full plain-text>
+      Here you may set a password to protect your Staffing Form. You will need to provide this password if you wish to access your Staffing Form again should you need to change it.. 
+    </vaadin-label>
+    <vaadin-form-layout width="75%" margin="false" :center>
+     <vaadin-password-field caption="Password:" _id="password"></vaadin-password-field>
+     <vaadin-password-field caption="Confirm Password:" _id="confirmPassword"></vaadin-password-field>
+     <vaadin-button style-name="friendly" plain-text _id="submit">
+       Volunteer! 
+     </vaadin-button>
+    </vaadin-form-layout>
    </vaadin-vertical-layout>
-   <vaadin-css-layout style-name="login-information" width="300px">
-    <vaadin-vertical-layout spacing="false" margin="false">
-     <vaadin-label style-name="h1" width-full plain-text _id="title">
-       Title 
-     </vaadin-label>
-     <vaadin-label width-full _id="sideLabel">
-       Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum 
-     </vaadin-label>
-    </vaadin-vertical-layout>
-   </vaadin-css-layout>
-  </vaadin-css-layout>
+  </vaadin-panel>
  </body>
 </html>

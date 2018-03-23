@@ -33,4 +33,8 @@ public class Properties {
         return environment.getProperty("admin.message");
     }
 
+    public String[] captchaWords() {
+        return environment.getProperty("captcha.words", String[].class);
+    }
+
 }
