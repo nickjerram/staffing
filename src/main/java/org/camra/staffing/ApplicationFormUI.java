@@ -18,7 +18,7 @@ import java.util.Optional;
 
 @SpringUI(path="/form/*")
 @Theme("mytheme")
-@Viewport("user-scalable=no,initial-scale=1.0")
+@Viewport("user-scalable=no,initial-scale=0.5")
 public class ApplicationFormUI extends UI {
 
     @Autowired private WelcomeLayoutLogic welcome;
