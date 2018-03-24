@@ -84,7 +84,7 @@ public class Volunteer extends StaffingEntity<Integer> {
 	}
 	
 	public void addArea(AssignableArea area, Preference preference) {
-		boolean added = false;
+		Boolean added = false;
 		for (VolunteerArea va : volunteerAreas) {
 			if (va.getAssignableArea().getId()==area.getId()) {
 				va.setPreference(preference);

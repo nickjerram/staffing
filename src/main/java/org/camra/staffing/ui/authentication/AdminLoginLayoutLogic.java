@@ -6,8 +6,10 @@ import com.vaadin.ui.Button;
 import org.camra.staffing.AdminUI;
 import org.camra.staffing.data.entity.AdminUser;
 import org.camra.staffing.data.service.AdminLoginService;
+import org.camra.staffing.ui.WelcomeLayoutLogic;
 import org.camra.staffing.util.Properties;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.PostConstruct;
 import java.util.Optional;
@@ -16,14 +18,15 @@ import java.util.Optional;
 @SpringComponent
 public class AdminLoginLayoutLogic extends LoginLayout {
 
-    @Autowired private Properties properties;
     @Autowired private AdminLoginService adminLoginService;
     @Autowired private AdminUI ui;
+    @Value("${admin.login}") private String adminLogin;
+    @Value("${admin.prompt}") private String adminPrompt;
 
     @PostConstruct
     private void init() {
-        title.setValue(properties.getFestivalName()+" Staffing Administration");
-        sideLabel.setValue(properties.getAdminMessage());
+        title.setValue(adminLogin);
+        message.setValue(adminPrompt);
         login.addClickListener(this::login);
     }
 

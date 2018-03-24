@@ -13,4 +13,6 @@ import java.util.Optional;
 public interface VolunteerRepository extends JpaRepository<Volunteer, Integer>, QueryByExampleExecutor<Volunteer> {
 
     Optional<Volunteer> findByUuid(String uuid);
+
+    Optional<Volunteer> findByMembershipAndSurnameAndForename(String membership, String surname, String forename);
 }

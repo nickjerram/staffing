@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.camra.staffing.data.entity.AreaSelector;
+import org.camra.staffing.data.entity.AssignableArea;
 import org.camra.staffing.data.entity.Preference;
 import org.camra.staffing.data.entity.VolunteerArea;
 
@@ -24,18 +25,18 @@ public class AreaSelectorDTO {
     }
 
     public static AreaSelectorDTO create(AreaSelector as) {
-        AreaSelectorDTO dto = new AreaSelectorDTO();
-        dto.areaId = as.getId().getAreaId();
+        AreaSelectorDTO dto = new AreaSelectorDTO(as.getId().getAreaId(), as.getPreference());
         dto.areaName = as.getName();
-        dto.preference = as.getPreference();
         return dto;
     }
 
-    public static AreaSelectorDTO fromVolunteerArea(VolunteerArea va) {
-        AreaSelectorDTO dto =  new AreaSelectorDTO();
-        dto.setAreaId(va.getAssignableArea().getId());
-        dto.setAreaName(va.getAssignableArea().getName());
-        dto.setPreference(va.getPreference());
-        return dto;
+    public AreaSelectorDTO(int areaId, Preference preference) {
+        this.areaId = areaId;
+        this.preference = preference;
     }
+
+    public static final AreaSelectorDTO UNASSIGNED = new AreaSelectorDTO(AssignableArea.UNASSIGNED, Preference.DontMind);
+
+    public static final AreaSelectorDTO NOT_NEEDED = new AreaSelectorDTO(AssignableArea.NOT_NEEDED, Preference.DontMind);
+
 }

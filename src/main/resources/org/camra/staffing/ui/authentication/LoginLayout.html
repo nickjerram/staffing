@@ -6,31 +6,28 @@
   <meta name="vaadin-version" content="8.0.5">
  </head>
  <body>
-  <vaadin-css-layout style-name="login-screen" size-full>
-   <vaadin-vertical-layout style-name="centering-layout" spacing="false" size-auto margin="false">
-    <vaadin-form-layout style-name="login-form" size-auto :middle :center>
-     <vaadin-text-field caption="Username" width="15em" _id="username"></vaadin-text-field>
-     <vaadin-password-field caption="Password" width="15em" _id="password"></vaadin-password-field>
-     <vaadin-css-layout style-name="buttons">
-      <vaadin-button style-name="friendly" plain-text _id="login">
-        Login 
-      </vaadin-button>
-      <vaadin-button style-name="link" plain-text _id="forgotPassword">
-        Button 
-      </vaadin-button>
-     </vaadin-css-layout>
-    </vaadin-form-layout>
-   </vaadin-vertical-layout>
-   <vaadin-css-layout style-name="login-information" width="400px">
-    <vaadin-vertical-layout spacing="false" margin="false">
-     <vaadin-label style-name="h1" width-full plain-text _id="title">
-       Title 
-     </vaadin-label>
-     <vaadin-label width-full _id="sideLabel">
-       Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum 
-     </vaadin-label>
-    </vaadin-vertical-layout>
-   </vaadin-css-layout>
-  </vaadin-css-layout>
+  <vaadin-vertical-layout size-full>
+   <vaadin-label style-name="h1" plain-text _id="title">
+     Label 
+   </vaadin-label>
+   <vaadin-label _id="message">
+     Label 
+   </vaadin-label>
+   <vaadin-label visible="false" style-name="failure" plain-text _id="error">
+     Label 
+   </vaadin-label>
+   <vaadin-form-layout size-auto>
+    <vaadin-text-field caption="Username" width="15em" _id="username"></vaadin-text-field>
+    <vaadin-password-field caption="Password" width="15em" _id="password"></vaadin-password-field>
+    <vaadin-css-layout style-name="buttons">
+     <vaadin-button style-name="friendly" plain-text _id="login">
+       Login 
+     </vaadin-button>
+     <vaadin-button style-name="link" plain-text _id="forgotPassword">
+       Button 
+     </vaadin-button>
+    </vaadin-css-layout>
+   </vaadin-form-layout>
+  </vaadin-vertical-layout>
  </body>
 </html>

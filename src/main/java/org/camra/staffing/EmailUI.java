@@ -11,6 +11,7 @@ import org.camra.staffing.ui.volunteer.forms.EmailFormLogic;
 import org.camra.staffing.ui.volunteer.message.MessageView;
 import org.camra.staffing.ui.volunteer.message.MessageViewLogic;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 
 @SpringUI(path="/email")
@@ -18,7 +19,7 @@ import org.springframework.context.annotation.Lazy;
 @Viewport("user-scalable=no,initial-scale=1.0")
 public class EmailUI extends UI {
 
-    @Autowired private WelcomeLayoutLogic welcome;
+    @Autowired private WelcomeLayoutLogic welcomeLayout;
     @Lazy @Autowired private EmailFormLogic emailForm;
     @Autowired private MessageViewLogic messageView;
 
@@ -26,15 +27,14 @@ public class EmailUI extends UI {
     protected void init(VaadinRequest vaadinRequest) {
         addStyleName(ValoTheme.UI_WITH_MENU);
         getPage().setTitle("Volunteering");
-        welcome.setMainTitle("Welcome");
-        welcome.setContent(emailForm);
-        setContent(welcome);
+        welcomeLayout.setContent(emailForm);
+        setContent(welcomeLayout);
         emailForm.show();
     }
 
     public void showMessage(String title, String message) {
         messageView.setMessage(message);
-        welcome.setMainTitle(title);
-        welcome.setContent(messageView);
+        messageView.setTitle(title);
+        welcomeLayout.setContent(messageView);
     }
 }

@@ -8,6 +8,7 @@ import org.camra.staffing.data.entity.*;
 import org.camra.staffing.data.entityviews.AssignmentSelectorView;
 import org.camra.staffing.data.entityviews.VolunteerSessionView;
 import org.camra.staffing.data.repository.*;
+import org.camra.staffing.util.CamraMember;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.data.domain.Sort.Order;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,6 +47,11 @@ public class VolunteerService {
         return volunteerRepository.findByUuid(uuid).map(VolunteerDTO::create);
     }
 
+    public Optional<VolunteerDTO> getVolunteer(CamraMember member) {
+        return volunteerRepository.findByMembershipAndSurnameAndForename(member.getMembership(), member.getSurname(), member.getForename())
+                .map(VolunteerDTO::create);
+    }
+
     public int countVolunteers(Query<VolunteerDTO,Example<Volunteer>> query) {
         if (query.getFilter().isPresent()) {
             return (int) volunteerRepository.count(query.getFilter().get());
@@ -59,11 +66,23 @@ public class VolunteerService {
     }
 
     public void saveVolunteer(VolunteerDTO volunteerDTO) {
-        Volunteer toSave = volunteerDTO.getId()==0 ? new Volunteer() : volunteerRepository.findOne(volunteerDTO.getId());
+        Volunteer toSave = volunteerDTO.getId()==null ? new Volunteer() : volunteerRepository.findOne(volunteerDTO.getId());
         volunteerDTO.populateVolunteer(toSave);
         Volunteer saved = volunteerRepository.save(toSave);
+
+        //areas
         VolunteerAreaAssigner assigner = new VolunteerAreaAssigner(saved);
         assigner.assign(volunteerDTO.getAreas().values());
+
+        //sessions
+        for (int sessionId : volunteerDTO.getSessionsToAdd()) {
+            Session session = sessionRepository.findOne(sessionId);
+            saved.addSession(session, assignableAreaRepository.getUnassigned());
+        }
+        for (int sessionId : volunteerDTO.getSessionsToRemove()) {
+            Session session = sessionRepository.findOne(sessionId);
+            saved.removeSession(session);
+        }
         volunteerRepository.save(saved);
     }
 
@@ -101,14 +120,15 @@ public class VolunteerService {
         volunteerRepository.saveAndFlush(v);
     }
 
-    public void saveVolunteerSession(int volunteerId, List<SessionSelectorDTO> sessions) {
+    public void saveVolunteerSession(int volunteerId, List<Integer> sessionsIds) {
         Volunteer v = volunteerRepository.findOne(volunteerId);
-        for (SessionSelectorDTO session: sessions) {
-            Session s = sessionRepository.findOne(session.getSessionId());
+        for (Integer sessionId: sessionsIds) {
+            Session s = sessionRepository.findOne(sessionId);
             v.addSession(s, assignableAreaRepository.getUnassigned());
         }
         volunteerRepository.saveAndFlush(v);
     }
+
 
     /**
      * Convert the Sorting and Paging components of a Vaadin Query into a Spring JPA PageRequest

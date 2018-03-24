@@ -23,6 +23,7 @@ public abstract class MainGrid<T> extends Grid<T> {
     }
 
     private void itemClick(Grid.ItemClick<T> event) {
+        if (event.getColumn().getId()==null) return;
         if (event.getColumn().getId().equals("edit")) {
             if (editHandler!=null) {
                 editHandler.accept(event.getItem());

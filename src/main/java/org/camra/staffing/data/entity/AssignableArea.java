@@ -10,12 +10,15 @@ import javax.persistence.*;
 @EqualsAndHashCode(callSuper=false, of={"id"})
 public class AssignableArea extends StaffingEntity<Integer> {
 
-	public AssignableArea() {}
+	public static final int UNASSIGNED = -1;
+    public static final int NOT_NEEDED = 0;
+
+	//public AssignableArea() {}
 	
-	public AssignableArea(FormArea formArea, String name) {
-		this.formArea = formArea;
-		this.name = name;
-	}
+	//public AssignableArea(FormArea formArea, String name) {
+	//	this.formArea = formArea;
+	//	this.name = name;
+	//}
 	
 	@Id @Getter private Integer id;
 	private @ManyToOne @Getter FormArea formArea;

@@ -66,8 +66,8 @@ public class CamraAuthentication {
             Element root = (Element)xpath.evaluate("/xml", in, XPathConstants.NODE);
             String error = xpath.evaluate("Error", root);
             if (StringUtils.hasText(error)) {
-                System.out.println(error);
-            };
+                return Optional.empty();
+            }
 
             return Optional.of(new CamraMember(
                     xpath.evaluate("Surname", root),

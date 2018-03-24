@@ -10,7 +10,7 @@ public interface AssignableAreaRepository extends JpaRepository<AssignableArea, 
     List<AssignableArea> findByFormAreaId(int id);
 
     default AssignableArea getUnassigned() {
-        return findOne(-1);
+        return findOne(AssignableArea.UNASSIGNED);
     }
 
     default AssignableArea getNotWorking() {

@@ -5,6 +5,7 @@ import com.vaadin.data.converter.StringToIntegerConverter;
 import com.vaadin.spring.annotation.SpringComponent;
 import org.camra.staffing.AdminUI;
 import org.camra.staffing.data.dto.AssignmentSelectorDTO;
+import org.camra.staffing.data.dto.SessionSelectorDTO;
 import org.camra.staffing.data.dto.VolunteerDTO;
 import org.camra.staffing.data.dto.VolunteerSessionDTO;
 import org.camra.staffing.data.service.VolunteerService;
@@ -19,6 +20,7 @@ import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @SpringComponent
@@ -97,7 +99,8 @@ public class VolunteerSessionFormLogic extends VolunteerSessionForm {
             volunteerSession.setAreaId(newAssignment.getAreaId());
             volunteerService.saveAssignment(volunteerSession);
         } else if (volunteer!=null) {
-            volunteerService.saveVolunteerSession(volunteer.getId(), sessionSelectorGrid.getNewSessions());
+            List<Integer> sessionIds = sessionSelectorGrid.getNewSessions().stream().map(SessionSelectorDTO::getSessionId).collect(Collectors.toList());
+            volunteerService.saveVolunteerSession(volunteer.getId(), sessionIds);
         }
         removeStyleName("visible");
         saveHandler.ifPresent(h -> h.accept(volunteerSession));

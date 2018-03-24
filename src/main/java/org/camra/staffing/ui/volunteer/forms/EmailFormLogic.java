@@ -8,8 +8,10 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.Image;
 import org.camra.staffing.EmailUI;
 import org.camra.staffing.data.dto.EmailDTO;
+import org.camra.staffing.data.dto.VolunteerDTO;
 import org.camra.staffing.data.entity.Volunteer;
 import org.camra.staffing.data.repository.VolunteerRepository;
+import org.camra.staffing.data.service.VolunteerService;
 import org.camra.staffing.email.EmailMessage;
 import org.camra.staffing.email.EmailSender;
 import org.camra.staffing.util.CaptchaController;
@@ -28,17 +30,21 @@ public class EmailFormLogic extends EmailForm {
 
     @Autowired private CaptchaController captcha;
     @Autowired private EmailSender emailSender;
-    @Autowired private VolunteerRepository volunteerRepository;
+    @Autowired private VolunteerService volunteerService;
     @Autowired private EmailUI emailUI;
     @Value("${email.welcome}") private String emailBody;
     @Value("${email.welcome.subject}") private String emailSubject;
     @Value("${email.message}") private String emailMessageText;
+    @Value("${emailform.title}") private String formTitle;
+    @Value("${emailform.message}") private String formMessage;
 
     private BeanValidationBinder<EmailDTO> binder = new BeanValidationBinder<>(EmailDTO.class);
     private List<String> errorMessages = new ArrayList<>();
 
     @PostConstruct
     private void init() {
+        title.setValue(formTitle);
+        message.setValue(formMessage);
         binder.forField(forename).bind("forename");
         binder.forField(surname).bind("surname");
         binder.forField(email).bind("email");
@@ -59,7 +65,7 @@ public class EmailFormLogic extends EmailForm {
         validate(email);
 
         if (errorMessages.isEmpty()) {
-            Volunteer volunteer = createVolunteer(email);
+            VolunteerDTO volunteer = createVolunteer(email);
             sendEmail(volunteer);
             emailUI.showMessage("Thank You!",emailMessageText.replace("EMAIL", volunteer.getEmail()));
         }
@@ -81,17 +87,17 @@ public class EmailFormLogic extends EmailForm {
         errors.setValue(errorMessages.stream().collect(Collectors.joining("<br/>")));
     }
 
-    private Volunteer createVolunteer(EmailDTO email) {
-        Volunteer volunteer = new Volunteer();
+    private VolunteerDTO createVolunteer(EmailDTO email) {
+        VolunteerDTO volunteer = new VolunteerDTO();
         volunteer.setUuid(UUID.randomUUID().toString());
         volunteer.setForename(email.getForename());
         volunteer.setSurname(email.getSurname());
         volunteer.setEmail(email.getEmail());
-        volunteerRepository.save(volunteer);
+        volunteerService.saveVolunteer(volunteer);
         return volunteer;
     }
 
-    private void sendEmail(Volunteer volunteer) {
+    private void sendEmail(VolunteerDTO volunteer) {
         String messageBody = emailBody
                 .replace("UUID", volunteer.getUuid())
                 .replace("FORENAME", volunteer.getForename())

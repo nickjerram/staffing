@@ -41,4 +41,9 @@ public class SessionDTO {
         }
         return text;
     }
+
+    public String getLongDescription() {
+        String dayString = day.format(DAY_FORMAT);
+        return dayString + (night ? "overnight" : startTime+" - "+finishTime);
+    }
 }

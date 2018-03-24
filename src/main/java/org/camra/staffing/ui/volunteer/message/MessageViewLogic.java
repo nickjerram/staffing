@@ -7,6 +7,10 @@ import com.vaadin.spring.annotation.UIScope;
 @UIScope
 public class MessageViewLogic extends MessageView {
 
+    public void setTitle(String title) {
+        this.title.setValue(title);
+    }
+
     public void setMessage(String message) {
         messageText.setValue(message);
     }
