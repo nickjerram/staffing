@@ -45,6 +45,7 @@ public class VolunteerDTO {
     public void addSession(int sessionId) {
         if (!sessions.contains(sessionId)) {
             sessionsToAdd.add(sessionId);
+            sessions.add(sessionId);
         }
     }
 
