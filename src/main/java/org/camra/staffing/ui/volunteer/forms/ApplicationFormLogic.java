@@ -1,5 +1,7 @@
 package org.camra.staffing.ui.volunteer.forms;
 
+import com.jarektoro.responsivelayout.ResponsiveLayout;
+import com.jarektoro.responsivelayout.ResponsiveRow;
 import com.vaadin.data.BeanValidationBinder;
 import com.vaadin.data.Binder;
 import com.vaadin.data.ValidationException;
@@ -8,6 +10,7 @@ import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.*;
+import com.vaadin.ui.themes.ValoTheme;
 import org.camra.staffing.ApplicationFormUI;
 import org.camra.staffing.data.dto.AssignedCountsDTO;
 import org.camra.staffing.data.dto.SessionDTO;
@@ -45,6 +48,7 @@ public class ApplicationFormLogic extends ApplicationForm {
 
     private static final DateTimeFormatter DAY_FORMAT = DateTimeFormatter.ofPattern("EEEE dd MMM");
     private static final String[] colours = {"#33af33","#5daf35","#88b038","#b8ba35","#e7c333","#dfa533","#d68533","#ae5c33","#853333"};
+    private static final List<Preference> options = Arrays.asList(Preference.values());
 
     @Value("${email.welcome.subject}") private String emailSubject;
     @Value("${mainform.verified}") private String verified;
@@ -71,16 +75,9 @@ public class ApplicationFormLogic extends ApplicationForm {
 
     @PostConstruct
     private void init() {
-        List<FormArea> areaList = formAreaRepository.findAll();
-        List<Preference> options = Arrays.asList(Preference.values());
-        for (FormArea area : areaList) {
-            ComboBox<Preference> selector = new ComboBox<>(area.getName(), options);
-            selector.setEmptySelectionAllowed(false);
-            selector.setValue(Preference.DontMind);
-            selector.setItemCaptionGenerator(Preference::getCaption);
-            areaSelectors.put(area.getId(), selector);
-            areas.addComponent(selector);
-        }
+
+        createAreas();
+
         level0.setValue(Columns.getIconCode("#33af33", VaadinIcons.CIRCLE));
         level1.setValue(Columns.getIconCode("#5daf35", VaadinIcons.CIRCLE));
         level2.setValue(Columns.getIconCode("#88b038", VaadinIcons.CIRCLE));
@@ -94,6 +91,27 @@ public class ApplicationFormLogic extends ApplicationForm {
         bindFields();
         submit.addClickListener(this::submit);
     }
+
+    private void createAreas() {
+        List<FormArea> areaList = formAreaRepository.findAll();
+        ResponsiveLayout responsiveLayout = new ResponsiveLayout().withDefaultRules(8,6,4,2).withFlexible();
+        ResponsiveRow row = responsiveLayout.addRow().withGrow(false).withSpacing(false);
+        for (FormArea area : areaList) {
+            ComboBox<Preference> selector = createAreaSelector(area);
+            row.addComponent(selector);
+            areaSelectors.put(area.getId(), selector);
+        }
+        areas.addComponent(responsiveLayout);
+    }
+
+    private ComboBox<Preference> createAreaSelector(FormArea area) {
+        ComboBox<Preference> selector = new ComboBox<>(area.getName(), options);
+        selector.setEmptySelectionAllowed(false);
+        selector.setValue(Preference.DontMind);
+        selector.setItemCaptionGenerator(Preference::getCaption);
+        return selector;
+    }
+
 
     private void submit(Button.ClickEvent clickEvent) {
         if (validate()) {
@@ -187,13 +205,18 @@ public class ApplicationFormLogic extends ApplicationForm {
     }
 
     private void createDay(LocalDate localDate) {
-        CssLayout dayLane = new CssLayout();
+        VerticalLayout day = new VerticalLayout();
+        day.setSpacing(false);
+        day.setMargin(false);
+        ResponsiveLayout dayLaneHolder = new ResponsiveLayout().withDefaultRules(8,6,4,2).withFlexible();
+        ResponsiveRow dayLane = dayLaneHolder.addRow().withGrow(false).withSpacing(false);
         dayLane.setWidth("100%");
         Label dayLabel = new Label(DAY_FORMAT.format(localDate));
-        dayLabel.setWidth("20%");
-        dayLane.addComponent(dayLabel);
+        dayLabel.addStyleName(ValoTheme.LABEL_H2);
+        day.addComponent(dayLabel);
+        day.addComponent(dayLane);
         sessionMap.get(localDate).forEach(session -> dayLane.addComponent(createSession(session)));
-        sessions.addComponent(dayLane);
+        sessions.addComponent(day);
     }
 
     private HorizontalLayout createSession(SessionDTO session) {
