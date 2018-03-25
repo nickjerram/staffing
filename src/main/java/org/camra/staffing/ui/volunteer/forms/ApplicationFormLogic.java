@@ -95,7 +95,7 @@ public class ApplicationFormLogic extends ApplicationForm {
     private void createAreas() {
         List<FormArea> areaList = formAreaRepository.findAllByOrderById();
         
-        ResponsiveLayout responsiveLayout = new ResponsiveLayout().withDefaultRules(8,6,4,2).withFlexible();
+        ResponsiveLayout responsiveLayout = new ResponsiveLayout().withDefaultRules(8,6,4,4).withFlexible();
         ResponsiveRow row = responsiveLayout.addRow().withGrow(false).withSpacing(true);
         for (FormArea area : areaList) {
             ComboBox<Preference> selector = createAreaSelector(area);

@@ -12,6 +12,7 @@ import org.camra.staffing.ui.WelcomeLayoutLogic;
 import org.camra.staffing.ui.volunteer.forms.ApplicationFormLogic;
 import org.camra.staffing.ui.volunteer.message.MessageViewLogic;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 
 import java.util.Optional;
@@ -22,6 +23,7 @@ import java.util.Optional;
 @Viewport("width=device-width, initial-scale=1")
 public class ApplicationFormUI extends UI {
 
+    @Value("${mainform.notfound}") private String notFound;
     @Autowired private WelcomeLayoutLogic welcome;
     @Lazy @Autowired private ApplicationFormLogic applicationFormLogic;
     @Autowired private MessageViewLogic messageView;
@@ -39,7 +41,7 @@ public class ApplicationFormUI extends UI {
         volunteer.ifPresent(this::foundVolunteer);
 
         if (!volunteer.isPresent()) {
-            showMessage("Sorry...","This URL is not valid. If you are trying to access your Staffing Form...");
+            showMessage("Sorry...",notFound);
         }
         setContent(welcome);
     }
