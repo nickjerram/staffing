@@ -12450,6 +12450,13 @@ wrapped-label {
     word-wrap: break-word !important;
 }
 
+.mytheme .mobile-layout {
+    background-image: url(img/archetype-login-bg.jpg);
+    background-size: 100%;
+    background-color: rgba(50, 50, 50, 0.7);
+    color: #f2f6fa !important;
+}
+
 .mytheme .login-screen .login-information {
 	display: inline-block;
 	position: absolute;
