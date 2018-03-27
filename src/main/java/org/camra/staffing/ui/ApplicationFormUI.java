@@ -43,7 +43,6 @@ public class ApplicationFormUI extends StaffingUI {
     }
 
     private void foundVolunteer(VolunteerDTO volunteer) {
-        volunteer.setRetrieved(true);
         applicationFormLogic.setVolunteer(volunteer);
         if (!isMobile()) {
             welcome.setSizeLarge();

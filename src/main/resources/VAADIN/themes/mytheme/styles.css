@@ -1013,6 +1013,11 @@
 	user-select: none;
 }
 
+.v-gridlayout-spacing-on {
+    width: 20px;
+    height: 20px;
+}
+
 .v-app input[type="text"], .v-app .v-slot > .v-caption, .v-app .v-gridlayout-slot > .v-caption, .v-app .v-has-caption > .v-caption, .v-app .v-formlayout-captioncell > .v-caption, .v-app .v-csslayout > .v-caption {
 	-webkit-user-select: text;
 	-moz-user-select: text;

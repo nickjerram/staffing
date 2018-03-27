@@ -59,6 +59,10 @@ public class VolunteerSessionFormLogic extends VolunteerSessionForm {
         sessionSelectorGrid.setVisible(true);
         sessionSelectorGrid.setVolunteerId(volunteer.getId());
         sessionSelectorGrid.setChangeHandler(this::sessionsChanged);
+        sessionSelectorGrid.setSizeFull();
+        if (reassignmentGrid!=null) {
+            formLayout.removeComponent(reassignmentGrid);
+        }
         formLayout.addComponent(sessionSelectorGrid, 4);
         formLayout.setExpandRatio(sessionSelectorGrid, 1);
         addStyleName("visible");
@@ -79,6 +83,10 @@ public class VolunteerSessionFormLogic extends VolunteerSessionForm {
         reassignmentGrid.setSizeFull();
         reassignmentGrid.setItems(options);
         reassignmentGrid.setReassignmentHandler(this::reassign);
+        reassignmentGrid.setSizeFull();
+        if (sessionSelectorGrid!=null) {
+            formLayout.removeComponent(sessionSelectorGrid);
+        }
         formLayout.addComponent(reassignmentGrid,4);
         formLayout.setExpandRatio(reassignmentGrid, 1);
         addStyleName("visible");

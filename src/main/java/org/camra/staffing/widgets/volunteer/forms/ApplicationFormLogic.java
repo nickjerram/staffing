@@ -4,6 +4,7 @@ import com.jarektoro.responsivelayout.ResponsiveLayout;
 import com.jarektoro.responsivelayout.ResponsiveRow;
 import com.vaadin.data.Binder;
 import com.vaadin.icons.VaadinIcons;
+import com.vaadin.server.Page;
 import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
@@ -57,7 +58,7 @@ public class ApplicationFormLogic extends ApplicationForm {
     @Autowired private VolunteerService volunteerService;
     @Autowired private ApplicationFormUI formUI;
     @Autowired private EmailSender emailSender;
-    private Map<Integer,ComboBox<Preference>> areaSelectors= new HashMap<>();
+    private Map<Integer,RadioButtonGroup<Preference>> areaSelectors= new HashMap<>();
     private Map<LocalDate, List<SessionDTO>> sessionMap;
     private Map<Integer,CheckBox> sessionSelectors = new HashMap<>();
     private Map<Integer, List<AssignedCountsDTO>> counts;
@@ -85,25 +86,18 @@ public class ApplicationFormLogic extends ApplicationForm {
 
     private void createAreas() {
         List<FormArea> areaList = formAreaRepository.findAllByOrderById();
-        
-        ResponsiveLayout responsiveLayout = new ResponsiveLayout().withDefaultRules(8,6,4,4).withFlexible();
-        ResponsiveRow row = responsiveLayout.addRow().withGrow(false).withSpacing(true);
+        int windowWidth = Page.getCurrent().getBrowserWindowWidth();
+        int columns = windowWidth>1100 ? 3 : windowWidth>800 ? 2 :1;
         for (FormArea area : areaList) {
-            ComboBox<Preference> selector = createAreaSelector(area);
-            row.addComponent(selector);
-            areaSelectors.put(area.getId(), selector);
+            areas.setColumns(columns);
+            RadioButtonGroup<Preference> radioButtons = new RadioButtonGroup<Preference>(area.getName(), Preference.list);
+            radioButtons.setItemCaptionGenerator(preference -> preference.getCaption());
+            radioButtons.addStyleName(ValoTheme.OPTIONGROUP_HORIZONTAL);
+            areaSelectors.put(area.getId(), radioButtons);
+            areas.addComponent(radioButtons);
         }
-        areas.addComponent(responsiveLayout);
-    }
 
-    private ComboBox<Preference> createAreaSelector(FormArea area) {
-        ComboBox<Preference> selector = new ComboBox<>(area.getName(), options);
-        selector.setEmptySelectionAllowed(false);
-        selector.setValue(Preference.DontMind);
-        selector.setItemCaptionGenerator(Preference::getCaption);
-        return selector;
     }
-
 
     private void submit(Button.ClickEvent clickEvent) {
         if (validate()) {
@@ -115,9 +109,9 @@ public class ApplicationFormLogic extends ApplicationForm {
                 volunteer.setMembership(enterMembership.getValue());
             }
             for (int areaId : areaSelectors.keySet()) {
-               ComboBox<Preference> preferenceComboBox = areaSelectors.get(areaId);
-               Preference preference = preferenceComboBox.getValue();
-               volunteer.addArea(areaId, preference);
+                RadioButtonGroup<Preference> preferenceSelector = areaSelectors.get(areaId);
+                Preference preference = preferenceSelector.getValue();
+                volunteer.addArea(areaId, preference);
             }
 
             for (int sessionId : sessionSelectors.keySet()) {
@@ -174,13 +168,13 @@ public class ApplicationFormLogic extends ApplicationForm {
             membershipFields.setVisible(false);
         }
 
-        for (ComboBox<Preference> areaSelector : areaSelectors.values()) {
-            Preference defaultPreference = volunteer.isRetrieved() ? Preference.No : Preference.DontMind;
+        for (RadioButtonGroup<Preference> areaSelector : areaSelectors.values()) {
+            Preference defaultPreference = volunteer.getSessions().isEmpty() ? Preference.DontMind : Preference.No;
             areaSelector.setValue(defaultPreference);
         }
 
         for (int areaId : volunteer.getAreas().keySet()) {
-            ComboBox<Preference> selector = areaSelectors.get(areaId);
+            RadioButtonGroup<Preference> selector = areaSelectors.get(areaId);
             if (selector!=null) {
                 selector.setValue(volunteer.getAreas().get(areaId).getPreference());
             }
@@ -240,7 +234,7 @@ public class ApplicationFormLogic extends ApplicationForm {
         }
 
         boolean areasOK = false;
-        for (ComboBox<Preference> areaSelector : areaSelectors.values()) {
+        for (RadioButtonGroup<Preference> areaSelector : areaSelectors.values()) {
             areasOK |= areaSelector.getValue()!=Preference.No;
         }
         if (!areasOK) {
