@@ -29,7 +29,7 @@ public abstract class StaffingUI extends UI {
         return Page.getCurrent().getBrowserWindowWidth()<600;
     }
 
-    private StaffingLayout chooseLayout() {
+    protected StaffingLayout chooseLayout() {
         return isMobile() ? mobileLayout : welcomeLayout;
     }
 

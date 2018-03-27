@@ -6,6 +6,7 @@ import com.vaadin.ui.Button;
 import org.camra.staffing.data.dto.VolunteerDTO;
 import org.camra.staffing.data.service.CamraAuthentication;
 import org.camra.staffing.data.service.VolunteerService;
+import org.camra.staffing.ui.VerificationUI;
 import org.camra.staffing.widgets.layouts.WelcomeLayoutLogic;
 import org.camra.staffing.widgets.volunteer.forms.ApplicationFormLogic;
 import org.camra.staffing.util.CamraMember;
@@ -29,6 +30,7 @@ public class VerificationLoginLayoutLogic extends LoginLayout {
     @Autowired private WelcomeLayoutLogic welcomeLayout;
     @Autowired private ApplicationFormLogic applicationFormLogic;
     @Autowired private VolunteerService volunteerService;
+    @Autowired private VerificationUI verificationUI;
 
     @PostConstruct
     private void init() {
@@ -52,8 +54,7 @@ public class VerificationLoginLayoutLogic extends LoginLayout {
                 BeanUtils.copyProperties(member.get(), newVolunteer);
                 applicationFormLogic.setVolunteer(newVolunteer);
             }
-            welcomeLayout.setSizeLarge();
-            welcomeLayout.setContent(applicationFormLogic);
+            verificationUI.setFormComponent(applicationFormLogic);
         } else {
             error.setVisible(true);
             error.setValue(verificationFailure);
