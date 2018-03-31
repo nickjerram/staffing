@@ -2,13 +2,18 @@
 -- PostgreSQL database dump
 --
 
+-- Dumped from database version 9.6.8
+-- Dumped by pg_dump version 9.6.8
+
 SET statement_timeout = 0;
 SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
 SET client_min_messages = warning;
+SET row_security = off;
 
 --
 -- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
@@ -24,12 +29,41 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
+--
+-- Name: tablefunc; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS tablefunc WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION tablefunc; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION tablefunc IS 'functions that manipulate whole tables, including crosstab';
+
+
 SET default_tablespace = '';
 
 SET default_with_oids = false;
 
 --
--- Name: assignable_area; Type: TABLE; Schema: public; Owner: staffing; Tablespace: 
+-- Name: admin_login; Type: TABLE; Schema: public; Owner: staffing
+--
+
+CREATE TABLE public.admin_login (
+    id integer NOT NULL,
+    membership integer,
+    username character varying(50),
+    password character varying(50),
+    super boolean
+);
+
+
+ALTER TABLE public.admin_login OWNER TO staffing;
+
+--
+-- Name: assignable_area; Type: TABLE; Schema: public; Owner: staffing
 --
 
 CREATE TABLE public.assignable_area (
@@ -46,7 +80,7 @@ CREATE TABLE public.assignable_area (
 ALTER TABLE public.assignable_area OWNER TO staffing;
 
 --
--- Name: form_area; Type: TABLE; Schema: public; Owner: staffing; Tablespace: 
+-- Name: form_area; Type: TABLE; Schema: public; Owner: staffing
 --
 
 CREATE TABLE public.form_area (
@@ -59,40 +93,40 @@ CREATE TABLE public.form_area (
 ALTER TABLE public.form_area OWNER TO staffing;
 
 --
--- Name: volunteer; Type: TABLE; Schema: public; Owner: staffing; Tablespace: 
+-- Name: volunteer; Type: TABLE; Schema: public; Owner: staffing
 --
 
 CREATE TABLE public.volunteer (
     id integer NOT NULL,
     callsign character varying(40),
-    camping integer,
-    cellar boolean,
+    camping boolean NOT NULL,
+    cellar boolean NOT NULL,
     comment text,
-    confirmed boolean,
+    confirmed boolean NOT NULL,
     email character varying(100),
-    emailverified boolean,
-    firstaid boolean,
+    emailverified boolean NOT NULL,
+    firstaid boolean NOT NULL,
     forename character varying(50),
-    forklift boolean,
-    instructions boolean,
+    forklift boolean NOT NULL,
+    instructions boolean NOT NULL,
     managervouch character varying(100),
     membership character varying(20),
-    other boolean,
+    other boolean NOT NULL,
     password character varying(40),
     picture bytea,
     role character varying(40),
-    sia boolean,
+    sia boolean NOT NULL,
     surname character varying(50),
     tshirt integer,
     uuid character varying(36),
-    verified boolean
+    verified boolean NOT NULL
 );
 
 
 ALTER TABLE public.volunteer OWNER TO staffing;
 
 --
--- Name: volunteer_area; Type: TABLE; Schema: public; Owner: staffing; Tablespace: 
+-- Name: volunteer_area; Type: TABLE; Schema: public; Owner: staffing
 --
 
 CREATE TABLE public.volunteer_area (
@@ -105,7 +139,7 @@ CREATE TABLE public.volunteer_area (
 ALTER TABLE public.volunteer_area OWNER TO staffing;
 
 --
--- Name: area_selector; Type: VIEW; Schema: public; Owner: nick
+-- Name: area_selector; Type: VIEW; Schema: public; Owner: staffing
 --
 
 CREATE VIEW public.area_selector AS
@@ -128,10 +162,10 @@ UNION
    FROM public.form_area a;
 
 
-ALTER TABLE public.area_selector OWNER TO nick;
+ALTER TABLE public.area_selector OWNER TO staffing;
 
 --
--- Name: area_session; Type: TABLE; Schema: public; Owner: staffing; Tablespace: 
+-- Name: area_session; Type: TABLE; Schema: public; Owner: staffing
 --
 
 CREATE TABLE public.area_session (
@@ -144,7 +178,7 @@ CREATE TABLE public.area_session (
 ALTER TABLE public.area_session OWNER TO staffing;
 
 --
--- Name: assigned_counts; Type: TABLE; Schema: public; Owner: nick; Tablespace: 
+-- Name: assigned_counts; Type: TABLE; Schema: public; Owner: staffing
 --
 
 CREATE TABLE public.assigned_counts (
@@ -155,11 +189,13 @@ CREATE TABLE public.assigned_counts (
     required integer
 );
 
+ALTER TABLE ONLY public.assigned_counts REPLICA IDENTITY NOTHING;
 
-ALTER TABLE public.assigned_counts OWNER TO nick;
+
+ALTER TABLE public.assigned_counts OWNER TO staffing;
 
 --
--- Name: session; Type: TABLE; Schema: public; Owner: staffing; Tablespace: 
+-- Name: session; Type: TABLE; Schema: public; Owner: staffing
 --
 
 CREATE TABLE public.session (
@@ -178,7 +214,7 @@ CREATE TABLE public.session (
 ALTER TABLE public.session OWNER TO staffing;
 
 --
--- Name: volunteer_session; Type: TABLE; Schema: public; Owner: staffing; Tablespace: 
+-- Name: volunteer_session; Type: TABLE; Schema: public; Owner: staffing
 --
 
 CREATE TABLE public.volunteer_session (
@@ -197,7 +233,34 @@ CREATE TABLE public.volunteer_session (
 ALTER TABLE public.volunteer_session OWNER TO staffing;
 
 --
--- Name: possible_session; Type: VIEW; Schema: public; Owner: nick
+-- Name: main_view; Type: VIEW; Schema: public; Owner: staffing
+--
+
+CREATE VIEW public.main_view AS
+ SELECT (((v.id * 10000) + (vs.sessionid * 100)) + va.areaid) AS id,
+    v.id AS volunteerid,
+    v.forename,
+    v.surname,
+    vs.sessionid,
+    s.name AS session_name,
+    va.areaid,
+    aa.name AS area_name,
+    (va.areaid = vs.areaid) AS current,
+    ac.assigned,
+    COALESCE(ac.worked, (0)::bigint) AS worked,
+    ac.required
+   FROM (((((public.volunteer v
+     JOIN public.volunteer_area va ON ((va.volunteerid = v.id)))
+     JOIN public.volunteer_session vs ON ((vs.volunteerid = v.id)))
+     JOIN public.assignable_area aa ON ((aa.id = va.areaid)))
+     JOIN public.session s ON ((s.id = vs.sessionid)))
+     JOIN public.assigned_counts ac ON (((ac.areaid = aa.id) AND (ac.sessionid = s.id))));
+
+
+ALTER TABLE public.main_view OWNER TO staffing;
+
+--
+-- Name: possible_session; Type: VIEW; Schema: public; Owner: staffing
 --
 
 CREATE VIEW public.possible_session AS
@@ -222,10 +285,10 @@ CREATE VIEW public.possible_session AS
   ORDER BY s.start;
 
 
-ALTER TABLE public.possible_session OWNER TO nick;
+ALTER TABLE public.possible_session OWNER TO staffing;
 
 --
--- Name: sequence; Type: TABLE; Schema: public; Owner: staffing; Tablespace: 
+-- Name: sequence; Type: TABLE; Schema: public; Owner: staffing
 --
 
 CREATE TABLE public.sequence (
@@ -237,7 +300,7 @@ CREATE TABLE public.sequence (
 ALTER TABLE public.sequence OWNER TO staffing;
 
 --
--- Name: view_assignment_selector; Type: VIEW; Schema: public; Owner: nick
+-- Name: view_assignment_selector; Type: VIEW; Schema: public; Owner: staffing
 --
 
 CREATE VIEW public.view_assignment_selector AS
@@ -258,10 +321,10 @@ CREATE VIEW public.view_assignment_selector AS
      JOIN public.volunteer_session vs ON (((vs.sessionid = c.sessionid) AND (vs.volunteerid = va.volunteerid))));
 
 
-ALTER TABLE public.view_assignment_selector OWNER TO nick;
+ALTER TABLE public.view_assignment_selector OWNER TO staffing;
 
 --
--- Name: view_volunteer_session; Type: VIEW; Schema: public; Owner: nick
+-- Name: view_volunteer_session; Type: VIEW; Schema: public; Owner: staffing
 --
 
 CREATE VIEW public.view_volunteer_session AS
@@ -289,7 +352,16 @@ CREATE VIEW public.view_volunteer_session AS
      JOIN public.assignable_area a ON ((a.id = vs.areaid)));
 
 
-ALTER TABLE public.view_volunteer_session OWNER TO nick;
+ALTER TABLE public.view_volunteer_session OWNER TO staffing;
+
+--
+-- Data for Name: admin_login; Type: TABLE DATA; Schema: public; Owner: staffing
+--
+
+COPY public.admin_login (id, membership, username, password, super) FROM stdin;
+1	176340	\N	\N	t
+\.
+
 
 --
 -- Data for Name: area_session; Type: TABLE DATA; Schema: public; Owner: staffing
@@ -1412,7 +1484,7 @@ COPY public.form_area (id, dontmind, name) FROM stdin;
 --
 
 COPY public.sequence (seq_name, seq_count) FROM stdin;
-SEQ_GEN	0
+SEQ_GEN	2000
 \.
 
 
@@ -1464,363 +1536,371 @@ COPY public.session (id, finish, name, night, open, setup, special, start, taked
 --
 
 COPY public.volunteer (id, callsign, camping, cellar, comment, confirmed, email, emailverified, firstaid, forename, forklift, instructions, managervouch, membership, other, password, picture, role, sia, surname, tshirt, uuid, verified) FROM stdin;
-101	\N	\N	\N		\N	\N	\N	\N	Fred	\N	\N	\N	\N	\N	\N	\N		\N	Flintstone	\N	\N	\N
-151	\N	\N	\N		\N	\N	\N	\N	Flash	\N	\N	\N	\N	\N	\N	\N		\N	Gordon	\N	\N	\N
-501	\N	\N	\N		\N	\N	\N	\N	Nick	\N	\N	\N	\N	\N	\N	\N	Staffing Manager	\N	Jerram	\N	\N	\N
-502	\N	\N	\N		\N	\N	\N	\N	Joy	\N	\N	\N	\N	\N	\N	\N	Administration	\N	Jerram	\N	\N	\N
-503	\N	\N	\N	Festival publicity.	\N	\N	\N	\N	Mark	\N	\N	\N	\N	\N	\N	\N	Publicity Manager	\N	Johnston	\N	\N	\N
-504	\N	\N	\N	Site Team\n\\\n	\N	\N	\N	\N	Katrina	\N	\N	\N	\N	\N	\N	\N	Setup Coordinator	\N	Fletcher	\N	\N	\N
-505	\N	\N	\N	Please dont allocate me a specific tak for any of the sessions. I will be ther most of the time as Organiser and DPS	\N	\N	\N	\N	David	\N	\N	\N	\N	\N	\N	\N	Festival Organizer	\N	Scott	\N	\N	\N
-506	\N	\N	\N		\N	\N	\N	\N	Martin	\N	\N	\N	\N	\N	\N	\N	Deputy Administration	\N	Harbor	\N	\N	\N
-507	\N	\N	\N	As site manager this year I have put extra effort into roping people to volunteer. Anyone who can spell my name is probably kosher but will confirm via email.	\N	\N	\N	\N	Edward	\N	\N	\N	\N	\N	\N	\N	Site Manager	\N	Bilbe	\N	\N	\N
-508	\N	\N	\N	I am part of the site team. We are still to work out how coverage will work while the festival is open. Please check with me before assigning me outside of site team. -Ryan	\N	\N	\N	\N	Ryan	\N	\N	\N	\N	\N	\N	\N		\N	Shook	\N	\N	\N
-509	\N	\N	\N	If I'm on entrance then could a stall be provided as I have difficulty standing for long periods I have a folding chair if I'm on a stall if not possible please let me know and I'll try to sort something out	\N	\N	\N	\N	Ross	\N	\N	\N	\N	\N	\N	\N		\N	Chester	\N	\N	\N
-510	\N	\N	\N		\N	\N	\N	\N	Nick	\N	\N	\N	\N	\N	\N	\N	Chief Steward	\N	O`Reilly	\N	\N	\N
-511	\N	\N	\N		\N	\N	\N	\N	Andrew	\N	\N	\N	\N	\N	\N	\N		\N	Turner	\N	\N	\N
-512	\N	\N	\N	I will have a couple of half days off at some point during the above, tba depending on what's happening on site and other people's availabilities	\N	\N	\N	\N	Pat	\N	\N	\N	\N	\N	\N	\N	Deputy Organizer	\N	Rapley	\N	\N	\N
-513	\N	\N	\N		\N	\N	\N	\N	Test	\N	\N	\N	\N	\N	\N	\N		\N	Test	\N	\N	\N
-551	\N	\N	\N	I shall be working on Friday 28th 11.30 - 7.00pm.  On Beer Bar.\n\\\nMany Thanks\n\\\nTony	\N	\N	\N	\N	Tony	\N	\N	\N	\N	\N	\N	\N		\N	Crawley	\N	\N	\N
-552	\N	\N	\N	My principal job is supervising the cider judging (Fri up to at least 7pm, Sat up to 3pm), may be able to do some serving on cider bar. I need car parking (not camping) from Thursday pm until Sunday am.	\N	\N	\N	\N	Chris	\N	\N	\N	\N	\N	\N	\N		\N	Rogers	\N	\N	\N
-553	\N	\N	\N		\N	\N	\N	\N	Paul	\N	\N	\N	\N	\N	\N	\N		\N	Rayner	\N	\N	\N
-554	\N	\N	\N	I have over 4 years bar work experience and specialized in Ciders. 	\N	\N	\N	\N	Dean	\N	\N	\N	\N	\N	\N	\N		\N	Noakes	\N	\N	\N
-555	\N	\N	\N	Might be a little late some mornings.	\N	\N	\N	\N	Dickon	\N	\N	\N	\N	\N	\N	\N	Deputy Beer Bar Manager	\N	Hood	\N	\N	\N
-556	\N	\N	\N	Have previously volunteered the last few years	\N	\N	\N	\N	Ashish	\N	\N	\N	\N	\N	\N	\N		\N	Naik	\N	\N	\N
-557	\N	\N	\N	Request to work with Mike Garner #242522	\N	\N	\N	\N	Will	\N	\N	\N	\N	\N	\N	\N		\N	Burchell	\N	\N	\N
-558	\N	\N	\N		\N	\N	\N	\N	Danielle	\N	\N	\N	\N	\N	\N	\N		\N	Miller	\N	\N	\N
-559	\N	\N	\N		\N	\N	\N	\N	Katherine	\N	\N	\N	\N	\N	\N	\N		\N	Lilley	\N	\N	\N
-560	\N	\N	\N		\N	\N	\N	\N	Tim	\N	\N	\N	\N	\N	\N	\N		\N	Winter	\N	\N	\N
-561	\N	\N	\N	Night Team Manager (Please can my T-shirt reflect this)\n\\\n\n\\\nWill be on site Friday 21st.   Depending on what time I finish work on Friday 21st I will arrive sometime during the evening. \n\\\n\n\\\nDepart Sunday 30th am as I return to work on Monday 1st May\n\\\n\n\\\nCheck in to accommodation Saturday 22nd. Check out of accommodation Sunday 30th am after breakfast 	\N	\N	\N	\N	Richard	\N	\N	\N	\N	\N	\N	\N		\N	Shervington	\N	\N	\N
-562	\N	\N	\N	I will be helping with the beer judging on Thursday, as on previous years, working with more fellow-Kennet Morris Men..	\N	\N	\N	\N	Nic	\N	\N	\N	\N	\N	\N	\N		\N	Yannacopoulos	\N	\N	\N
-563	\N	\N	\N		\N	\N	\N	\N	Brian	\N	\N	\N	\N	\N	\N	\N		\N	Oxnard	\N	\N	\N
-564	\N	\N	\N		\N	\N	\N	\N	David	\N	\N	\N	\N	\N	\N	\N		\N	West	\N	\N	\N
-565	\N	\N	\N		\N	\N	\N	\N	Patrick	\N	\N	\N	\N	\N	\N	\N		\N	Nolan	\N	\N	\N
-566	\N	\N	\N		\N	\N	\N	\N	Peter	\N	\N	\N	\N	\N	\N	\N		\N	Weekes	\N	\N	\N
-568	\N	\N	\N		\N	\N	\N	\N	Philip	\N	\N	\N	\N	\N	\N	\N		\N	Chappell	\N	\N	\N
-569	\N	\N	\N		\N	\N	\N	\N	Lydia	\N	\N	\N	\N	\N	\N	\N		\N	Charles	\N	\N	\N
-570	\N	\N	\N	Friends: James Elsmore, Tim Freeman, Douglas McDougall	\N	\N	\N	\N	Nicholas	\N	\N	\N	\N	\N	\N	\N		\N	Mackerness	\N	\N	\N
-571	\N	\N	\N		\N	\N	\N	\N	Jo	\N	\N	\N	\N	\N	\N	\N		\N	Nicolson	\N	\N	\N
-572	\N	\N	\N		\N	\N	\N	\N	Stephanie	\N	\N	\N	\N	\N	\N	\N		\N	Henderson	\N	\N	\N
-573	\N	\N	\N		\N	\N	\N	\N	Michael	\N	\N	\N	\N	\N	\N	\N		\N	Brady	\N	\N	\N
-574	\N	\N	\N	Can I be in the same area as David Hassell and Rachel  Siertsema\n\\\n\n\\\nThis is the third time I have submitted this form. I tried on 5th and 18th April and\n\\\nhave not heard back if I have been accepted or not. I also sent a direct email on 19th April. Both David and Rachel mentioned above got an accetance email on the 14th. I did get an automated reply when submitting the form from staffing@readingbeerfestival.org.uk so I don't think it is a spam filter issue, if I auctually have been sent an accetance email.\n\\\n\n\\\nAn alternative email is sswilson9876@gmail.com but I can't change this in the form above.\n\\\n\n\\\nCould you let me know ASAP if I've been accepted?	\N	\N	\N	\N	Simon	\N	\N	\N	\N	\N	\N	\N		\N	Wilson	\N	\N	\N
-575	\N	\N	\N		\N	\N	\N	\N	David	\N	\N	\N	\N	\N	\N	\N		\N	Price	\N	\N	\N
-576	\N	\N	\N	Prefer to work Cider Bar, but can be flexible if really needed else where	\N	\N	\N	\N	Brendan	\N	\N	\N	\N	\N	\N	\N		\N	Sothcott	\N	\N	\N
-577	\N	\N	\N		\N	\N	\N	\N	Andy	\N	\N	\N	\N	\N	\N	\N		\N	Pinkard	\N	\N	\N
-578	\N	\N	\N		\N	\N	\N	\N	Elspeth	\N	\N	\N	\N	\N	\N	\N		\N	Brady	\N	\N	\N
-579	\N	\N	\N		\N	\N	\N	\N	Richard	\N	\N	\N	\N	\N	\N	\N		\N	Russell	\N	\N	\N
-580	\N	\N	\N	Request to work with Will Burchell #288853	\N	\N	\N	\N	Mike	\N	\N	\N	\N	\N	\N	\N		\N	Garner	\N	\N	\N
-581	\N	\N	\N	Same area as Ashish Naik	\N	\N	\N	\N	Aaron	\N	\N	\N	\N	\N	\N	\N		\N	Edgcumbe	\N	\N	\N
-582	\N	\N	\N		\N	\N	\N	\N	Alex	\N	\N	\N	\N	\N	\N	\N		\N	Harkness	\N	\N	\N
-583	\N	\N	\N		\N	\N	\N	\N	Nicky	\N	\N	\N	\N	\N	\N	\N		\N	Rhoods	\N	\N	\N
-584	\N	\N	\N		\N	\N	\N	\N	Kenneth	\N	\N	\N	\N	\N	\N	\N		\N	Baker	\N	\N	\N
-585	\N	\N	\N	I am aiming to arrive on Wednesday 19th and stay to the end of takedown. I will be bringing my office equipment in my van and will need a parking space for it on site. I have agreed to be the radio manager again but will be able to help out on other jobs throughout setup and takedown.	\N	\N	\N	\N	David	\N	\N	\N	\N	\N	\N	\N	Radio Manager	\N	Jones	\N	\N	\N
-586	\N	\N	\N		\N	\N	\N	\N	Jennie	\N	\N	\N	\N	\N	\N	\N		\N	Walker	\N	\N	\N
-587	\N	\N	\N		\N	\N	\N	\N	Kathryn	\N	\N	\N	\N	\N	\N	\N		\N	Jarvis	\N	\N	\N
-588	\N	\N	\N	Takedown Tuesday 2 May only able to work untill 13.00. Prefer to work with AJD Wheatcroft	\N	\N	\N	\N	Cleo	\N	\N	\N	\N	\N	\N	\N		\N	Wheatcroft	\N	\N	\N
-589	\N	\N	\N	Only able to work up to 13.00 on Tuesday 02 May. Prefer to work with C. Wheatcroft	\N	\N	\N	\N	Andrew	\N	\N	\N	\N	\N	\N	\N		\N	Wheatcroft	\N	\N	\N
-590	\N	\N	\N		\N	\N	\N	\N	Katy	\N	\N	\N	\N	\N	\N	\N		\N	Aldridge	\N	\N	\N
-591	\N	\N	\N		\N	\N	\N	\N	Sarah	\N	\N	\N	\N	\N	\N	\N		\N	Rigby	\N	\N	\N
-592	\N	\N	\N	Have worked the Foreign bier bar for many years but don't mind working on the normal bars if short.\n\\\n\n\\\nCheers. David Newman.	\N	\N	\N	\N	David	\N	\N	\N	\N	\N	\N	\N		\N	Newman	\N	\N	\N
-593	\N	\N	\N	My husband will volunteer on the same session , can we work the same bar - his CAMRA number is 277293	\N	\N	\N	\N	Christine	\N	\N	\N	\N	\N	\N	\N		\N	Watson	\N	\N	\N
-594	\N	\N	\N	Thought I could make it, unfortunately it turns out I have an exam that week and so cannot. Please don't allocate. Sorry	\N	\N	\N	\N	Alexei	\N	\N	\N	\N	\N	\N	\N		\N	Samarenko	\N	\N	\N
-595	\N	\N	\N		\N	\N	\N	\N	Mario	\N	\N	\N	\N	\N	\N	\N		\N	Mendolicchio	\N	\N	\N
-596	\N	\N	\N	 I would be best suited on entrance and glasses. Cannot do any heavy lifting. 	\N	\N	\N	\N	Rachel	\N	\N	\N	\N	\N	\N	\N		\N	Bulcock	\N	\N	\N
-597	\N	\N	\N		\N	\N	\N	\N	Jim	\N	\N	\N	\N	\N	\N	\N		\N	Kullander	\N	\N	\N
-598	\N	\N	\N		\N	\N	\N	\N	Anne	\N	\N	\N	\N	\N	\N	\N		\N	Thomas	\N	\N	\N
-599	\N	\N	\N	If possible could I have a 3XL T-shirt if available if not XXL will do but could be a little tight.	\N	\N	\N	\N	Nicholas	\N	\N	\N	\N	\N	\N	\N		\N	Cornish	\N	\N	\N
-600	\N	\N	\N	I volunteered last year and find that i'm best suited behind the bar, happy to help on the camera stand as well :)\n\\\nForeign beer is my speciality knowledge.	\N	\N	\N	\N	Zoe	\N	\N	\N	\N	\N	\N	\N		\N	Andrews	\N	\N	\N
-601	\N	\N	\N		\N	\N	\N	\N	Mitch	\N	\N	\N	\N	\N	\N	\N		\N	Bateman 	\N	\N	\N
-602	\N	\N	\N		\N	\N	\N	\N	Katy	\N	\N	\N	\N	\N	\N	\N		\N	Turgoose	\N	\N	\N
-603	\N	\N	\N		\N	\N	\N	\N	Robert	\N	\N	\N	\N	\N	\N	\N		\N	Hussey	\N	\N	\N
-682	\N	\N	\N		\N	\N	\N	\N	David	\N	\N	\N	\N	\N	\N	\N		\N	Bumstead	\N	\N	\N
-683	\N	\N	\N		\N	\N	\N	\N	Ben	\N	\N	\N	\N	\N	\N	\N		\N	Hart	\N	\N	\N
-604	\N	\N	\N	Applying for stewards but after previous conversation with the CS I would like to continue training and working in the radio control room. 	\N	\N	\N	\N	Rhea	\N	\N	\N	\N	\N	\N	\N		\N	Sloman	\N	\N	\N
-605	\N	\N	\N		\N	\N	\N	\N	Greg	\N	\N	\N	\N	\N	\N	\N		\N	Clarke	\N	\N	\N
-606	\N	\N	\N		\N	\N	\N	\N	Graham	\N	\N	\N	\N	\N	\N	\N		\N	Bradbrook	\N	\N	\N
-607	\N	\N	\N		\N	\N	\N	\N	John	\N	\N	\N	\N	\N	\N	\N		\N	Maiden	\N	\N	\N
-608	\N	\N	\N		\N	\N	\N	\N	Tony	\N	\N	\N	\N	\N	\N	\N		\N	Girling	\N	\N	\N
-609	\N	\N	\N		\N	\N	\N	\N	Duncan	\N	\N	\N	\N	\N	\N	\N		\N	Ward	\N	\N	\N
-610	\N	\N	\N		\N	\N	\N	\N	Roy	\N	\N	\N	\N	\N	\N	\N	Beer Bar Manager	\N	Garraway	\N	\N	\N
-611	\N	\N	\N		\N	\N	\N	\N	Andrew	\N	\N	\N	\N	\N	\N	\N		\N	Kitney	\N	\N	\N
-612	\N	\N	\N	Hi Nick\n\\\n\n\\\nI will be doing the Friday night of set up until the night team arrives as per usual and then joining the site team for the Saturday of set up. A T shirt would be nice this year as last year I did set up and later in the week and received none.\n\\\n\n\\\nI've put down for the Monday of set up so that the form becomes active. I will not be around on the Monday of Set up.\n\\\n\n\\\nCheers James\n\\\n	\N	\N	\N	\N	James	\N	\N	\N	\N	\N	\N	\N		\N	Shipp	\N	\N	\N
-613	\N	\N	\N	If you get short staffed I may be able to do more hours than I have marked.\n\\\nI have worked your last 3 beer fests so I should be in your volunteer records.  	\N	\N	\N	\N	Lee	\N	\N	\N	\N	\N	\N	\N		\N	Keates	\N	\N	\N
-614	\N	\N	\N	I may be in at 11.00 on the Friday morning.	\N	\N	\N	\N	Alan	\N	\N	\N	\N	\N	\N	\N		\N	Hawkins	\N	\N	\N
-615	\N	\N	\N		\N	\N	\N	\N	Simon	\N	\N	\N	\N	\N	\N	\N		\N	Berry	\N	\N	\N
-616	\N	\N	\N		\N	\N	\N	\N	Anthony	\N	\N	\N	\N	\N	\N	\N		\N	Collins	\N	\N	\N
-617	\N	\N	\N	I have said I will do Monday 1st on takedown, this is going to be suject to weather I have to work or not as it's a Bank Holiday I won't know until the week before.	\N	\N	\N	\N	Trevor	\N	\N	\N	\N	\N	\N	\N		\N	Pemberton	\N	\N	\N
-618	\N	\N	\N		\N	\N	\N	\N	Lyndon	\N	\N	\N	\N	\N	\N	\N		\N	Sharpe	\N	\N	\N
-619	\N	\N	\N		\N	\N	\N	\N	Chris	\N	\N	\N	\N	\N	\N	\N		\N	Jarvis	\N	\N	\N
-620	\N	\N	\N		\N	\N	\N	\N	Barry	\N	\N	\N	\N	\N	\N	\N		\N	Webb	\N	\N	\N
-621	\N	\N	\N		\N	\N	\N	\N	Greg	\N	\N	\N	\N	\N	\N	\N		\N	Davies	\N	\N	\N
-622	\N	\N	\N	I may want a camping space and if I do will work more sessions but I will know by the end of this month	\N	\N	\N	\N	Stephen	\N	\N	\N	\N	\N	\N	\N		\N	Mcgrath	\N	\N	\N
-623	\N	\N	\N		\N	\N	\N	\N	Tracy	\N	\N	\N	\N	\N	\N	\N		\N	Tester	\N	\N	\N
-624	\N	\N	\N	I'm part of the games team that's worked on there for many years so please can I get put there again.	\N	\N	\N	\N	Tes	\N	\N	\N	\N	\N	\N	\N		\N	Matthews	\N	\N	\N
-625	\N	\N	\N		\N	\N	\N	\N	Kirk	\N	\N	\N	\N	\N	\N	\N		\N	Winkler	\N	\N	\N
-626	\N	\N	\N	I will be on site from around 11 am. to 5 pm. to oversee the finals of the National Cider and Perry Championships.	\N	\N	\N	\N	Andrea	\N	\N	\N	\N	\N	\N	\N		\N	Briers	\N	\N	\N
-627	\N	\N	\N	Kennet Morris. Serving in kit. With the rest of the side if possible. 	\N	\N	\N	\N	Glenn	\N	\N	\N	\N	\N	\N	\N		\N	Barrett	\N	\N	\N
-628	\N	\N	\N		\N	\N	\N	\N	John	\N	\N	\N	\N	\N	\N	\N		\N	McGarvey	\N	\N	\N
-629	\N	\N	\N		\N	\N	\N	\N	Eugene	\N	\N	\N	\N	\N	\N	\N		\N	McSorley	\N	\N	\N
-630	\N	\N	\N	Will be with the Kennet Morris Men for their Sessions .	\N	\N	\N	\N	Max	\N	\N	\N	\N	\N	\N	\N		\N	Beare	\N	\N	\N
-631	\N	\N	\N		\N	\N	\N	\N	John	\N	\N	\N	\N	\N	\N	\N		\N	Maiden	\N	\N	\N
-632	\N	\N	\N		\N	\N	\N	\N	Jennifer	\N	\N	\N	\N	\N	\N	\N	Deputy Games Manager	\N	Farley	\N	\N	\N
-633	\N	\N	\N	Normally I work on the Foreign Beer Bar clearing empties,  replenishing shelves and generally keeping the back area tidy as well as working as a relief on Camra Products and Glasses.\n\\\n	\N	\N	\N	\N	Laurence	\N	\N	\N	\N	\N	\N	\N		\N	Hansford	\N	\N	\N
-634	\N	\N	\N		\N	\N	\N	\N	Iain	\N	\N	\N	\N	\N	\N	\N		\N	Cresswell	\N	\N	\N
-635	\N	\N	\N	Hoping to man one of the bars in kit with the Kennet Morris Men.	\N	\N	\N	\N	Chris	\N	\N	\N	\N	\N	\N	\N		\N	Tunnicliffe	\N	\N	\N
-636	\N	\N	\N	Can you put me with the lovely Miss Kate (Hannah) Martin? Thanks!	\N	\N	\N	\N	Caroline	\N	\N	\N	\N	\N	\N	\N		\N	Middlehurst	\N	\N	\N
-637	\N	\N	\N		\N	\N	\N	\N	Christopher	\N	\N	\N	\N	\N	\N	\N		\N	Hinton	\N	\N	\N
-638	\N	\N	\N	Work with Caroline Middlehurst for the Friday and Saturday shifts please	\N	\N	\N	\N	Kate	\N	\N	\N	\N	\N	\N	\N		\N	Martin	\N	\N	\N
-639	\N	\N	\N		\N	\N	\N	\N	John	\N	\N	\N	\N	\N	\N	\N		\N	Breakwell	\N	\N	\N
-640	\N	\N	\N		\N	\N	\N	\N	John	\N	\N	\N	\N	\N	\N	\N		\N	Abramson	\N	\N	\N
-641	\N	\N	\N		\N	\N	\N	\N	Malcolm	\N	\N	\N	\N	\N	\N	\N		\N	Graham	\N	\N	\N
-642	\N	\N	\N	Deputy Bar Manager on Foreign Bar	\N	\N	\N	\N	Stephen	\N	\N	\N	\N	\N	\N	\N	Deputy Foreign Bar Manager	\N	Jackson	\N	\N	\N
-643	\N	\N	\N		\N	\N	\N	\N	James	\N	\N	\N	\N	\N	\N	\N		\N	Moore	\N	\N	\N
-644	\N	\N	\N		\N	\N	\N	\N	Roger	\N	\N	\N	\N	\N	\N	\N		\N	Butland	\N	\N	\N
-645	\N	\N	\N		\N	\N	\N	\N	Neil	\N	\N	\N	\N	\N	\N	\N		\N	Munkman	\N	\N	\N
-646	\N	\N	\N		\N	\N	\N	\N	Michael	\N	\N	\N	\N	\N	\N	\N		\N	Oliver	\N	\N	\N
-647	\N	\N	\N	Might be around for more sessions if needed but won't know until closer to the time	\N	\N	\N	\N	Dom	\N	\N	\N	\N	\N	\N	\N		\N	Humphries	\N	\N	\N
-648	\N	\N	\N	I am cellar manager this year	\N	\N	\N	\N	Timothy	\N	\N	\N	\N	\N	\N	\N	Cellar Manager	\N	Lloyd	\N	\N	\N
-649	\N	\N	\N	Deputy Entrance :-)	\N	\N	\N	\N	Oliver	\N	\N	\N	\N	\N	\N	\N	Deputy Entrance Manager	\N	Seaman	\N	\N	\N
-650	\N	\N	\N		\N	\N	\N	\N	Andrew	\N	\N	\N	\N	\N	\N	\N		\N	Young	\N	\N	\N
-651	\N	\N	\N	I am happy to assist Brian Jones in the Beer Tasting panels.\n\\\nI am happy to work on Keith Jordan's bar and be Deputy Bar Manager for him.	\N	\N	\N	\N	Bob	\N	\N	\N	\N	\N	\N	\N	Deputy Beer Bar Manager	\N	Smith	\N	\N	\N
-652	\N	\N	\N		\N	\N	\N	\N	Bob	\N	\N	\N	\N	\N	\N	\N		\N	Brodie	\N	\N	\N
-653	\N	\N	\N	Monday to Wednesday on cellar team\n\\\nThursday to Sunday as bar manager	\N	\N	\N	\N	Ian	\N	\N	\N	\N	\N	\N	\N	Deputy Beer Bar Manager	\N	Davey	\N	\N	\N
-654	\N	\N	\N		\N	\N	\N	\N	Chris	\N	\N	\N	\N	\N	\N	\N		\N	Elliott	\N	\N	\N
-655	\N	\N	\N		\N	\N	\N	\N	David	\N	\N	\N	\N	\N	\N	\N		\N	Zajac	\N	\N	\N
-656	\N	\N	\N		\N	\N	\N	\N	Claudia	\N	\N	\N	\N	\N	\N	\N		\N	Wittkowske	\N	\N	\N
-657	\N	\N	\N		\N	\N	\N	\N	Matthew	\N	\N	\N	\N	\N	\N	\N		\N	Little	\N	\N	\N
-658	\N	\N	\N	I'd like to work with Jamie Ryan please.	\N	\N	\N	\N	Laura	\N	\N	\N	\N	\N	\N	\N		\N	Jackaman	\N	\N	\N
-659	\N	\N	\N	I'll be assisting Brian Jones et al with fetching and carrying for the Thursday afternoon ales judging.	\N	\N	\N	\N	Peter	\N	\N	\N	\N	\N	\N	\N		\N	de Courcy	\N	\N	\N
-660	\N	\N	\N	I would like to work with Laura Jackaman please.	\N	\N	\N	\N	Jamie	\N	\N	\N	\N	\N	\N	\N		\N	Ryan	\N	\N	\N
-661	\N	\N	\N	I may be available for other session but will not know until nearer Festival.	\N	\N	\N	\N	David	\N	\N	\N	\N	\N	\N	\N		\N	Lawton	\N	\N	\N
-662	\N	\N	\N		\N	\N	\N	\N	Judy	\N	\N	\N	\N	\N	\N	\N		\N	Beale	\N	\N	\N
-663	\N	\N	\N	Working in the cellar team as in previous years.	\N	\N	\N	\N	Derek	\N	\N	\N	\N	\N	\N	\N		\N	Jones	\N	\N	\N
-664	\N	\N	\N	I would like to please work in the beer bar with my son Oliver Billing.	\N	\N	\N	\N	Mark	\N	\N	\N	\N	\N	\N	\N		\N	Billing	\N	\N	\N
-665	\N	\N	\N	Will be working with the cellar team. I might be able to work Saturday, need to check if I'm due to be going to football or not.	\N	\N	\N	\N	Adrian	\N	\N	\N	\N	\N	\N	\N		\N	Bean	\N	\N	\N
-666	\N	\N	\N		\N	\N	\N	\N	Tom	\N	\N	\N	\N	\N	\N	\N		\N	Hughes	\N	\N	\N
-667	\N	\N	\N		\N	\N	\N	\N	Ben	\N	\N	\N	\N	\N	\N	\N		\N	Skidmore	\N	\N	\N
-668	\N	\N	\N		\N	\N	\N	\N	Sue	\N	\N	\N	\N	\N	\N	\N	Foreign Bar Manager	\N	Thirlaway	\N	\N	\N
-669	\N	\N	\N		\N	\N	\N	\N	John	\N	\N	\N	\N	\N	\N	\N	Foreign Beer Orderer	\N	Thirlaway	\N	\N	\N
-670	\N	\N	\N	I would please like to work in the beer bar with my father Mark Billing.	\N	\N	\N	\N	Oliver	\N	\N	\N	\N	\N	\N	\N		\N	Billing	\N	\N	\N
-671	\N	\N	\N		\N	\N	\N	\N	Brian	\N	\N	\N	\N	\N	\N	\N	Beer Judging Organizer	\N	Jones	\N	\N	\N
-672	\N	\N	\N		\N	\N	\N	\N	Andrew	\N	\N	\N	\N	\N	\N	\N		\N	Cresswell	\N	\N	\N
-673	\N	\N	\N	Nick,\n\\\nDue to the fact that I am on crutches this year - following an operation in December - I am restricted in what I can do.  I have spoken with Dave and agreed that I will provide support where possible, with the primary task being the set-up and support for the office, along with other tasks that I can achieve.\n\\\n\n\\\nThanking you\n\\\n\n\\\nArfs	\N	\N	\N	\N	Arthur	\N	\N	\N	\N	\N	\N	\N		\N	Pounder	\N	\N	\N
-674	\N	\N	\N	Kennet Morris man\n\\\nDancing Saturday day\n\\\nBeer judging Thursday day\n\\\nTraffic or barrel shifting\n\\\nMonday to Thursday lunchtime	\N	\N	\N	\N	Simon	\N	\N	\N	\N	\N	\N	\N		\N	Bracegirdle	\N	\N	\N
-675	\N	\N	\N		\N	\N	\N	\N	Douglas	\N	\N	\N	\N	\N	\N	\N		\N	Cross	\N	\N	\N
-676	\N	\N	\N		\N	\N	\N	\N	Wayne	\N	\N	\N	\N	\N	\N	\N		\N	Steel	\N	\N	\N
-677	\N	\N	\N		\N	\N	\N	\N	A	\N	\N	\N	\N	\N	\N	\N		\N	A	\N	\N	\N
-678	\N	\N	\N	Monday and weds day to help with staff catering	\N	\N	\N	\N	SUSAN	\N	\N	\N	\N	\N	\N	\N		\N	TAYLOR	\N	\N	\N
-679	\N	\N	\N	Part of Site Team. probably about for 22nd & 23rd as well	\N	\N	\N	\N	Ron	\N	\N	\N	\N	\N	\N	\N		\N	Haskins	\N	\N	\N
-680	\N	\N	\N		\N	\N	\N	\N	John	\N	\N	\N	\N	\N	\N	\N		\N	Thompson	\N	\N	\N
-681	\N	\N	\N		\N	\N	\N	\N	Patrick	\N	\N	\N	\N	\N	\N	\N		\N	Grant	\N	\N	\N
-684	\N	\N	\N	On days where I've volunteered for late sessions I'll need to leave at 22:45 in order to catch last bus home.	\N	\N	\N	\N	Laura	\N	\N	\N	\N	\N	\N	\N		\N	Bilbe	\N	\N	\N
-685	\N	\N	\N		\N	\N	\N	\N	Charles	\N	\N	\N	\N	\N	\N	\N		\N	Brinley Codd	\N	\N	\N
-686	\N	\N	\N	I can work until 1700 on Friday 28th	\N	\N	\N	\N	Nick	\N	\N	\N	\N	\N	\N	\N		\N	Swift	\N	\N	\N
-687	\N	\N	\N		\N	\N	\N	\N	Graham	\N	\N	\N	\N	\N	\N	\N		\N	May	\N	\N	\N
-688	\N	\N	\N	Prefer bar on Saturday and Entrance Sunday	\N	\N	\N	\N	Mike	\N	\N	\N	\N	\N	\N	\N		\N	Smith	\N	\N	\N
-689	\N	\N	\N	Deputy Games Manager (shared with Jennie Farley)	\N	\N	\N	\N	Madeleine	\N	\N	\N	\N	\N	\N	\N	Deputy Games Manager	\N	Markey	\N	\N	\N
-690	\N	\N	\N		\N	\N	\N	\N	Camilla	\N	\N	\N	\N	\N	\N	\N		\N	Ford	\N	\N	\N
-691	\N	\N	\N	I would like to work in the same area as my husband, Ian King ( 121835) who has requested the same time beer bar slots as me.	\N	\N	\N	\N	Margaret	\N	\N	\N	\N	\N	\N	\N		\N	King	\N	\N	\N
-692	\N	\N	\N	Can I work together with Alex HARKNESS Please. Thank You Reading Camra.	\N	\N	\N	\N	Steve	\N	\N	\N	\N	\N	\N	\N		\N	LAWRENCE	\N	\N	\N
-766	\N	\N	\N	I am disabled, so may require sit down quick breaks throughout the session	\N	\N	\N	\N	Jo	\N	\N	\N	\N	\N	\N	\N		\N	Toovey	\N	\N	\N
-693	\N	\N	\N	On Monday afternoon I intend to work until ~3pm, although if I am still full of energy I may continue until 5pm hauling casks. 	\N	\N	\N	\N	Nicholas	\N	\N	\N	\N	\N	\N	\N		\N	Mayes	\N	\N	\N
-694	\N	\N	\N		\N	\N	\N	\N	Doug	\N	\N	\N	\N	\N	\N	\N		\N	McDougall	\N	\N	\N
-695	\N	\N	\N	I have injured my back over the weekend so will not be able to volunteer tomorrow.  I am still hopeful for Thursday but it will have to be light duties.\n\\\n\n\\\nColin	\N	\N	\N	\N	Colin	\N	\N	\N	\N	\N	\N	\N		\N	Palmer	\N	\N	\N
-696	\N	\N	\N		\N	\N	\N	\N	Mark	\N	\N	\N	\N	\N	\N	\N		\N	Gravenor	\N	\N	\N
-697	\N	\N	\N	Would like to work with my son Daniel Hand who will sign up for same sessions and roles.	\N	\N	\N	\N	Richard	\N	\N	\N	\N	\N	\N	\N		\N	Hand	\N	\N	\N
-698	\N	\N	\N	Setup: I've told Martin Hoare I'll help him to get the PA wiring up.  I haven't ticked any sessions for that because it never goes to schedule!\n\\\nOpen: I can't stand up all day because of back pain.  I'll last longer and get more done if you can mix a sit-down job with the bar work.  Thanks.	\N	\N	\N	\N	Sue	\N	\N	\N	\N	\N	\N	\N		\N	White	\N	\N	\N
-699	\N	\N	\N	I am Qualified First Aid at work.	\N	\N	\N	\N	Thomas	\N	\N	\N	\N	\N	\N	\N		\N	Ruane	\N	\N	\N
-700	\N	\N	\N		\N	\N	\N	\N	Karen	\N	\N	\N	\N	\N	\N	\N		\N	Pratt	\N	\N	\N
-701	\N	\N	\N		\N	\N	\N	\N	James	\N	\N	\N	\N	\N	\N	\N		\N	Elsmore	\N	\N	\N
-702	\N	\N	\N	I would like to work alongside my friends, Ashish Naik and Richard Silley if possible please	\N	\N	\N	\N	Ralph	\N	\N	\N	\N	\N	\N	\N		\N	McFadyen	\N	\N	\N
-703	\N	\N	\N	Would like to work with Natalie New if possible. Member 514340	\N	\N	\N	\N	Jonbob	\N	\N	\N	\N	\N	\N	\N		\N	New	\N	\N	\N
-704	\N	\N	\N	Please could I work the same time and around the same area with Jonbob New, it doesn't have to be alongside him. 	\N	\N	\N	\N	Natalie	\N	\N	\N	\N	\N	\N	\N		\N	New	\N	\N	\N
-705	\N	\N	\N		\N	\N	\N	\N	Darren	\N	\N	\N	\N	\N	\N	\N		\N	Stock	\N	\N	\N
-706	\N	\N	\N	Cider bar manager and yes please i'd like a shirt.	\N	\N	\N	\N	Ewan	\N	\N	\N	\N	\N	\N	\N	Cider Bar Manager	\N	Tolladay	\N	\N	\N
-707	\N	\N	\N		\N	\N	\N	\N	Jo	\N	\N	\N	\N	\N	\N	\N		\N	Metcalf	\N	\N	\N
-708	\N	\N	\N		\N	\N	\N	\N	Mark	\N	\N	\N	\N	\N	\N	\N		\N	Treder	\N	\N	\N
-709	\N	\N	\N		\N	\N	\N	\N	Kevin	\N	\N	\N	\N	\N	\N	\N		\N	Brady	\N	\N	\N
-710	\N	\N	\N		\N	\N	\N	\N	Reshma	\N	\N	\N	\N	\N	\N	\N		\N	Thakkar	\N	\N	\N
-711	\N	\N	\N		\N	\N	\N	\N	John	\N	\N	\N	\N	\N	\N	\N		\N	Abramson	\N	\N	\N
-712	\N	\N	\N	Hi there! Ideally I'd like to help with games, as I know a couple of the team already (Andrew Waterfall and Tes Matthews) and it suits my personality down to the ground!	\N	\N	\N	\N	Mark	\N	\N	\N	\N	\N	\N	\N		\N	Haigh	\N	\N	\N
-713	\N	\N	\N	member of kennet morris men will be in kit pm\n\\\nagreed to help Brian Jones Thursday afternoon with beer judging	\N	\N	\N	\N	Clive	\N	\N	\N	\N	\N	\N	\N		\N	Allen	\N	\N	\N
-714	\N	\N	\N		\N	\N	\N	\N	john	\N	\N	\N	\N	\N	\N	\N		\N	brown	\N	\N	\N
-715	\N	\N	\N		\N	\N	\N	\N	Kate	\N	\N	\N	\N	\N	\N	\N		\N	Martin	\N	\N	\N
-716	\N	\N	\N		\N	\N	\N	\N	Darren	\N	\N	\N	\N	\N	\N	\N		\N	Streat	\N	\N	\N
-717	\N	\N	\N		\N	\N	\N	\N	Linda	\N	\N	\N	\N	\N	\N	\N		\N	Thompson	\N	\N	\N
-718	\N	\N	\N	Suffer with fibromyalgia so may not be able to work full shifts but will do my best to do so.	\N	\N	\N	\N	Gavin	\N	\N	\N	\N	\N	\N	\N		\N	Jenkins	\N	\N	\N
-719	\N	\N	\N	I am helping to run the cider competition so will not be behind the bar while this is running	\N	\N	\N	\N	Mike	\N	\N	\N	\N	\N	\N	\N		\N	Gilroy	\N	\N	\N
-720	\N	\N	\N		\N	\N	\N	\N	Simon	\N	\N	\N	\N	\N	\N	\N		\N	Andrews	\N	\N	\N
-721	\N	\N	\N		\N	\N	\N	\N	Jonathan	\N	\N	\N	\N	\N	\N	\N		\N	Meek	\N	\N	\N
-722	\N	\N	\N	My friend are SUPPOSED to be comming Saturday; but what normally happens is that they don't turn up and I'm spare to work on Saturday as well - i know you are always short.\n\\\nI don't mind doing ONE shift on the cider bar, but i can't handle any more.	\N	\N	\N	\N	Adrian	\N	\N	\N	\N	\N	\N	\N		\N	Samler	\N	\N	\N
-723	\N	\N	\N	I will be available on Wednesday evening to set up the CAMERA Sales and can pop in between 9.00 and 10.30 to help with set-up catering. I have a food hygiene certificate and will happily fill baguettes.	\N	\N	\N	\N	Tina	\N	\N	\N	\N	\N	\N	\N		\N	Bilbe	\N	\N	\N
-724	\N	\N	\N		\N	\N	\N	\N	Elvis	\N	\N	\N	\N	\N	\N	\N		\N	Evans	\N	\N	\N
-725	\N	\N	\N		\N	\N	\N	\N	Andrew	\N	\N	\N	\N	\N	\N	\N		\N	Waterfall	\N	\N	\N
-726	\N	\N	\N		\N	\N	\N	\N	Stuart	\N	\N	\N	\N	\N	\N	\N		\N	Evans	\N	\N	\N
-727	\N	\N	\N	Wish to work alongside Stuart Evans. 	\N	\N	\N	\N	Lisa	\N	\N	\N	\N	\N	\N	\N		\N	Ruffell	\N	\N	\N
-728	\N	\N	\N	Past games volunteer	\N	\N	\N	\N	Stephen	\N	\N	\N	\N	\N	\N	\N		\N	Smith	\N	\N	\N
-729	\N	\N	\N	Friday I will need to leave at about 6.30pm\n\\\nWork in Cash Hut	\N	\N	\N	\N	Sandra	\N	\N	\N	\N	\N	\N	\N		\N	Gill	\N	\N	\N
-730	\N	\N	\N	Sorry to be picky, but I can work between 10.15 and 18.00 (could hang on if it's really busy or you're short-staffed). Hope this fits with what you need. If not, please let me know.	\N	\N	\N	\N	Nick	\N	\N	\N	\N	\N	\N	\N		\N	Browne	\N	\N	\N
-731	\N	\N	\N		\N	\N	\N	\N	Giles	\N	\N	\N	\N	\N	\N	\N		\N	Nuttall	\N	\N	\N
-732	\N	\N	\N		\N	\N	\N	\N	Soffi	\N	\N	\N	\N	\N	\N	\N		\N	James	\N	\N	\N
-733	\N	\N	\N	Ideally with Graham May	\N	\N	\N	\N	Philip	\N	\N	\N	\N	\N	\N	\N		\N	Rassell	\N	\N	\N
-734	\N	\N	\N	Work the same sessions as my wife member no 536223 (Ann Martin-Jones)	\N	\N	\N	\N	Martin	\N	\N	\N	\N	\N	\N	\N		\N	Jones	\N	\N	\N
-735	\N	\N	\N	Work the same sessions as my husband - member no 536222 ( Martin Jones) 	\N	\N	\N	\N	Ann	\N	\N	\N	\N	\N	\N	\N		\N	Martin Jones	\N	\N	\N
-736	\N	\N	\N	Can you please allocate me to back of house.\n\\\n\n\\\nI will be sorting cask ends and helping cover on entrance and some other bits for the few days I am on site.	\N	\N	\N	\N	Adam	\N	\N	\N	\N	\N	\N	\N		\N	Gent	\N	\N	\N
-737	\N	\N	\N	Please can I work on the same bar as Evelyn Harrison-Bullock.	\N	\N	\N	\N	Josh	\N	\N	\N	\N	\N	\N	\N		\N	Harrison-Bullock	\N	\N	\N
-738	\N	\N	\N		\N	\N	\N	\N	Mark	\N	\N	\N	\N	\N	\N	\N		\N	Rickson	\N	\N	\N
-739	\N	\N	\N		\N	\N	\N	\N	Tim	\N	\N	\N	\N	\N	\N	\N		\N	Gough	\N	\N	\N
-740	\N	\N	\N	For the last few years I've worked on the wine bar, so I'm familiar with the products and procedures. If possible I would like to work on the wine bar again this year - thanks!	\N	\N	\N	\N	Frances	\N	\N	\N	\N	\N	\N	\N		\N	McFadden	\N	\N	\N
-741	\N	\N	\N		\N	\N	\N	\N	Neil	\N	\N	\N	\N	\N	\N	\N		\N	Lavington	\N	\N	\N
-742	\N	\N	\N		\N	\N	\N	\N	grace	\N	\N	\N	\N	\N	\N	\N		\N	Bradbrook	\N	\N	\N
-743	\N	\N	\N	Would like to do a few hours on the Thursday evening, this would depend on what time I am able to finish work so you need to confirm.\n\\\nAlso a few hours on the Friday late morning / early afternoon.\n\\\nI'd like to work with Grace Bradbrook, or Graham or Sharon who are also volunteering. 	\N	\N	\N	\N	lesley	\N	\N	\N	\N	\N	\N	\N		\N	buckley	\N	\N	\N
-744	\N	\N	\N		\N	\N	\N	\N	James	\N	\N	\N	\N	\N	\N	\N		\N	Milne	\N	\N	\N
-745	\N	\N	\N		\N	\N	\N	\N	Simon	\N	\N	\N	\N	\N	\N	\N		\N	Hanson	\N	\N	\N
-746	\N	\N	\N		\N	\N	\N	\N	Antony	\N	\N	\N	\N	\N	\N	\N		\N	Walbank	\N	\N	\N
-747	\N	\N	\N		\N	\N	\N	\N	John	\N	\N	\N	\N	\N	\N	\N		\N	Buckley	\N	\N	\N
-748	\N	\N	\N	I have helped in setup + cellar team) at ascot festival, but have no qualifications! I am available during the day w/c 23/4 and possibly week after. But not every day! Could fit in if u have particular need? Definitely no evenings until Saturday 29th if that makes sense.	\N	\N	\N	\N	Peter	\N	\N	\N	\N	\N	\N	\N		\N	Lucey	\N	\N	\N
-749	\N	\N	\N	Work with Kirk Winkler	\N	\N	\N	\N	Cheryl	\N	\N	\N	\N	\N	\N	\N		\N	Irwin	\N	\N	\N
-750	\N	\N	\N	Bar manager (Bar D?)\n\\\nWill work set up Wednesday if necessary, but would prefer a day off between working set up and bar manager, if possible.	\N	\N	\N	\N	Keith	\N	\N	\N	\N	\N	\N	\N	Beer Bar Manager	\N	Jordan	\N	\N	\N
-751	\N	\N	\N	Would like time off on Thursday evening to join the quiz.	\N	\N	\N	\N	Sheila	\N	\N	\N	\N	\N	\N	\N		\N	Jordan	\N	\N	\N
-752	\N	\N	\N		\N	\N	\N	\N	Thomas	\N	\N	\N	\N	\N	\N	\N		\N	Burke	\N	\N	\N
-753	\N	\N	\N	Cider Bar Manager\n\\\nWhat setup sessions I do depends on when the cider deliveries are.\n\\\nI will be there Saturday 22 Apr for cider stillage and bar construction (unless it's a different day).	\N	\N	\N	\N	Chris	\N	\N	\N	\N	\N	\N	\N	Cider Bar Manager	\N	Rouse	\N	\N	\N
-754	\N	\N	\N	All timings approximate as dependent on what shift I get at work on the day.	\N	\N	\N	\N	Michael	\N	\N	\N	\N	\N	\N	\N		\N	Dunstan	\N	\N	\N
-755	\N	\N	\N		\N	\N	\N	\N	Helen	\N	\N	\N	\N	\N	\N	\N		\N	Toomey	\N	\N	\N
-756	\N	\N	\N	Would like to work with James Elsmore	\N	\N	\N	\N	Tim	\N	\N	\N	\N	\N	\N	\N		\N	Freeman	\N	\N	\N
-757	\N	\N	\N		\N	\N	\N	\N	Ian	\N	\N	\N	\N	\N	\N	\N		\N	Tanner	\N	\N	\N
-758	\N	\N	\N		\N	\N	\N	\N	Stephen	\N	\N	\N	\N	\N	\N	\N		\N	Surridge	\N	\N	\N
-759	\N	\N	\N	I have worked on set-up over the last few years and I have decided to do it again this year. I have also been on the Cellar Team at Ascot Racecourse Beer Festival for the last few years also. I may do set-up on Wednesday, but will see how Monday and Tuesday go.	\N	\N	\N	\N	Clive	\N	\N	\N	\N	\N	\N	\N		\N	Doran	\N	\N	\N
-760	\N	\N	\N	I need to leave at 2300 to catch the last train home.	\N	\N	\N	\N	Norman	\N	\N	\N	\N	\N	\N	\N		\N	Sutton	\N	\N	\N
-761	\N	\N	\N		\N	\N	\N	\N	David	\N	\N	\N	\N	\N	\N	\N		\N	Harper	\N	\N	\N
-762	\N	\N	\N		\N	\N	\N	\N	Jonathan	\N	\N	\N	\N	\N	\N	\N		\N	Inglis	\N	\N	\N
-763	\N	\N	\N	Working in the treasury.	\N	\N	\N	\N	Phillip	\N	\N	\N	\N	\N	\N	\N		\N	Gill	\N	\N	\N
-764	\N	\N	\N		\N	\N	\N	\N	Heather	\N	\N	\N	\N	\N	\N	\N		\N	Lawn	\N	\N	\N
-765	\N	\N	\N	Would prefer to work with member 466192 but not essential.	\N	\N	\N	\N	Chris	\N	\N	\N	\N	\N	\N	\N		\N	Ray	\N	\N	\N
-767	\N	\N	\N	hi would like to work with simon crisp. if not possible then at least the same shift pattern. thanks.	\N	\N	\N	\N	marcus	\N	\N	\N	\N	\N	\N	\N		\N	jones	\N	\N	\N
-768	\N	\N	\N		\N	\N	\N	\N	becki	\N	\N	\N	\N	\N	\N	\N		\N	stringer	\N	\N	\N
-769	\N	\N	\N	would be great to work with laura jones. would need to be the same shifts as laura jones, Simon Crisp and Marcus Jones.	\N	\N	\N	\N	becki	\N	\N	\N	\N	\N	\N	\N		\N	stringer	\N	\N	\N
-770	\N	\N	\N		\N	\N	\N	\N	Ian	\N	\N	\N	\N	\N	\N	\N		\N	Johnson	\N	\N	\N
-771	\N	\N	\N		\N	\N	\N	\N	Anthony	\N	\N	\N	\N	\N	\N	\N		\N	Springall	\N	\N	\N
-772	\N	\N	\N	I won't be able to get there until 11am  & can only work until 21:00	\N	\N	\N	\N	Mark	\N	\N	\N	\N	\N	\N	\N		\N	Ostrowski	\N	\N	\N
-773	\N	\N	\N		\N	\N	\N	\N	robert 	\N	\N	\N	\N	\N	\N	\N		\N	ellis	\N	\N	\N
-774	\N	\N	\N	Radio log please	\N	\N	\N	\N	Laura	\N	\N	\N	\N	\N	\N	\N		\N	Dunn	\N	\N	\N
-775	\N	\N	\N		\N	\N	\N	\N	Andrew	\N	\N	\N	\N	\N	\N	\N		\N	Johnson	\N	\N	\N
-776	\N	\N	\N	I will be coming with Andy Johnson who is one of the cider bar managers under Chris Rouse. 	\N	\N	\N	\N	Sandy	\N	\N	\N	\N	\N	\N	\N		\N	Osman	\N	\N	\N
-777	\N	\N	\N		\N	\N	\N	\N	Stephen	\N	\N	\N	\N	\N	\N	\N		\N	Mcgrath	\N	\N	\N
-778	\N	\N	\N		\N	\N	\N	\N	Hayley	\N	\N	\N	\N	\N	\N	\N		\N	Price	\N	\N	\N
-779	\N	\N	\N		\N	\N	\N	\N	Paul	\N	\N	\N	\N	\N	\N	\N		\N	Gerrard	\N	\N	\N
-780	\N	\N	\N	Deputy bar manager, aka uncle Roy's carer.	\N	\N	\N	\N	Roger	\N	\N	\N	\N	\N	\N	\N	Deputy Beer Bar Manager	\N	Brown	\N	\N	\N
-781	\N	\N	\N		\N	\N	\N	\N	Nicholas	\N	\N	\N	\N	\N	\N	\N		\N	Wooldridge	\N	\N	\N
-782	\N	\N	\N	I'll be doing the beer judging again this year on Thursday (presume that counts as 'behind the scenes'). Other times I've said to James Moore I'll help him out on membership, seeing as I've run it before!	\N	\N	\N	\N	Quinten	\N	\N	\N	\N	\N	\N	\N		\N	Taylor	\N	\N	\N
-783	\N	\N	\N	My wife, Christine Watson, (CAMRA 277294) has already volunteered & will also be working on the bar during my shifts.  Because of the restraining order, could you please ensure we don't come within 1000 metres of each other. &#128514; ( Just kidding. We love working bar together if possible !)	\N	\N	\N	\N	Roger	\N	\N	\N	\N	\N	\N	\N		\N	Watson	\N	\N	\N
-784	\N	\N	\N		\N	\N	\N	\N	Ian	\N	\N	\N	\N	\N	\N	\N		\N	Read	\N	\N	\N
-785	\N	\N	\N		\N	\N	\N	\N	Teresa	\N	\N	\N	\N	\N	\N	\N		\N	Read	\N	\N	\N
-786	\N	\N	\N	I am manager of the games department.	\N	\N	\N	\N	NICK	\N	\N	\N	\N	\N	\N	\N		\N	HAMES	\N	\N	\N
-787	\N	\N	\N		\N	\N	\N	\N	ewfd	\N	\N	\N	\N	\N	\N	\N		\N	sedvf	\N	\N	\N
-788	\N	\N	\N	I'd like to work in the same area as Rachel Siertsema and Simon Wilson. Thanks.	\N	\N	\N	\N	David	\N	\N	\N	\N	\N	\N	\N		\N	Hassell	\N	\N	\N
-789	\N	\N	\N	Please could I work with David Hassell & Simon Wilson, thanks.	\N	\N	\N	\N	Rachel	\N	\N	\N	\N	\N	\N	\N		\N	Siertsema	\N	\N	\N
-790	\N	\N	\N	Have completed the CAMRA bar managers course.  \n\\\nWorked as bar manager at Hitchin, Maidenhead and Ascot Festivals.\n\\\nWorked as Foreign beer bar manager at Hitchin - know far too much about Belgian Beers and spent last two summer holidays in Munich and Bamberg - so can now bore about German beer!! 	\N	\N	\N	\N	Paul	\N	\N	\N	\N	\N	\N	\N		\N	Beardsley	\N	\N	\N
-791	\N	\N	\N	I heard there is a Cider Judging event. I would love to be a judge if that is possible! I am a very keen/quite discerning cider drinker. There are some great ciders made locally to this area so I would enjoy this immensely!\n\\\n\n\\\nI work at JMTC with Edd Bilbe who told me about this event and has volunteered for a few years I believe- it would be nice to work with him but it would be even nicer to be with cider. \n\\\n\n\\\n	\N	\N	\N	\N	Emily	\N	\N	\N	\N	\N	\N	\N		\N	Brooke	\N	\N	\N
-792	\N	\N	\N		\N	\N	\N	\N	Neil	\N	\N	\N	\N	\N	\N	\N		\N	Rippon	\N	\N	\N
-793	\N	\N	\N		\N	\N	\N	\N	Barry	\N	\N	\N	\N	\N	\N	\N		\N	Garber	\N	\N	\N
-794	\N	\N	\N		\N	\N	\N	\N	Stephen	\N	\N	\N	\N	\N	\N	\N		\N	Goodall	\N	\N	\N
-795	\N	\N	\N		\N	\N	\N	\N	Tanya	\N	\N	\N	\N	\N	\N	\N		\N	Godfrey	\N	\N	\N
-796	\N	\N	\N	Assisting with Beer Judging	\N	\N	\N	\N	Rachael	\N	\N	\N	\N	\N	\N	\N		\N	Wall	\N	\N	\N
-797	\N	\N	\N		\N	\N	\N	\N	Tony	\N	\N	\N	\N	\N	\N	\N		\N	Dickenson	\N	\N	\N
-798	\N	\N	\N	Would like to work in same area as Janine Shlackman (Member No. 530072).\n\\\n\n\\\nWe are new members and this is our first time volunteering so may need showing the ropes!	\N	\N	\N	\N	Paul	\N	\N	\N	\N	\N	\N	\N		\N	Shlackman	\N	\N	\N
-799	\N	\N	\N	Would like to work in same area as Paul Shlackman (Member No. 530071).\n\\\n\n\\\nWe are new members and this is our first time volunteering so may need showing the ropes!	\N	\N	\N	\N	Janine	\N	\N	\N	\N	\N	\N	\N		\N	Shlackman	\N	\N	\N
-800	\N	\N	\N		\N	\N	\N	\N	Maurice	\N	\N	\N	\N	\N	\N	\N		\N	Quirke	\N	\N	\N
-801	\N	\N	\N	Kennet Morris Men 	\N	\N	\N	\N	Tony	\N	\N	\N	\N	\N	\N	\N		\N	Bartlett	\N	\N	\N
-802	\N	\N	\N		\N	\N	\N	\N	PETER	\N	\N	\N	\N	\N	\N	\N		\N	FREWIN	\N	\N	\N
-803	\N	\N	\N		\N	\N	\N	\N	Stephen	\N	\N	\N	\N	\N	\N	\N		\N	Bates	\N	\N	\N
-804	\N	\N	\N		\N	\N	\N	\N	Jonathan	\N	\N	\N	\N	\N	\N	\N		\N	Lacey	\N	\N	\N
-805	\N	\N	\N	Could I work alongside Martin McCloud please.  We are good friends of Roger Brown, one of the bar managers and we always try to work with Roger.\n\\\nI am also trying to persuade a good friend, previous (good) volunteer, to assist at the same session (his name is Marc Ingram).\n\\\nAlso\n\\\nIf I can, I will try to arrive a little early - but I have to attend a birthday party in Reading Town Hall that afternoon so I cannot promise.  If I can, I will turn up as early a possible and sign in.\n\\\nMany thanks!	\N	\N	\N	\N	Pascal	\N	\N	\N	\N	\N	\N	\N		\N	Richardson	\N	\N	\N
-806	\N	\N	\N		\N	\N	\N	\N	Tim	\N	\N	\N	\N	\N	\N	\N		\N	Andrews	\N	\N	\N
-807	\N	\N	\N		\N	\N	\N	\N	Mitchell	\N	\N	\N	\N	\N	\N	\N		\N	Walmsley	\N	\N	\N
-808	\N	\N	\N	I know sign language (BSL)	\N	\N	\N	\N	Lee	\N	\N	\N	\N	\N	\N	\N		\N	Dalkin	\N	\N	\N
-809	\N	\N	\N		\N	\N	\N	\N	Chris	\N	\N	\N	\N	\N	\N	\N		\N	Hale	\N	\N	\N
-810	\N	\N	\N	Please could I work on the same bar as Josh Harrison-Bullock. 	\N	\N	\N	\N	Evelyn	\N	\N	\N	\N	\N	\N	\N		\N	Harrison-Bullock	\N	\N	\N
-811	\N	\N	\N		\N	\N	\N	\N	Andrew	\N	\N	\N	\N	\N	\N	\N		\N	Whitby	\N	\N	\N
-812	\N	\N	\N		\N	\N	\N	\N	Richard	\N	\N	\N	\N	\N	\N	\N		\N	Croton	\N	\N	\N
-813	\N	\N	\N	Work same area/times as Eileen Bartley #324903\n\\\n	\N	\N	\N	\N	Chris	\N	\N	\N	\N	\N	\N	\N		\N	Robinson	\N	\N	\N
-814	\N	\N	\N		\N	\N	\N	\N	Gregory	\N	\N	\N	\N	\N	\N	\N		\N	Cloney	\N	\N	\N
-815	\N	\N	\N		\N	\N	\N	\N	James	\N	\N	\N	\N	\N	\N	\N		\N	McNally	\N	\N	\N
-816	\N	\N	\N		\N	\N	\N	\N	Timothy	\N	\N	\N	\N	\N	\N	\N		\N	Thomas	\N	\N	\N
-817	\N	\N	\N		\N	\N	\N	\N	Felix	\N	\N	\N	\N	\N	\N	\N		\N	Iliff	\N	\N	\N
-818	\N	\N	\N	I would like to work in the same area as Felix Iliff if possible please. 	\N	\N	\N	\N	Elspeth	\N	\N	\N	\N	\N	\N	\N		\N	Iliff	\N	\N	\N
-819	\N	\N	\N	I would like to work in the same area as Phil Rassell if possible.	\N	\N	\N	\N	Tom	\N	\N	\N	\N	\N	\N	\N		\N	Gamble	\N	\N	\N
-820	\N	\N	\N	Apologies, for late entry I have only just found out about a meeting.\n\\\nPlease can I work with Steve Leyfield as usual.\n\\\nI have to go to Birmingham on Saturday for a meeting I will do as much as I can around this.\n\\\nThanks	\N	\N	\N	\N	Angela	\N	\N	\N	\N	\N	\N	\N		\N	Aspin	\N	\N	\N
-821	\N	\N	\N	As discussed in the first meeting I have been put forward as Deputy Bar Manager by Tim Lloyd	\N	\N	\N	\N	Luke	\N	\N	\N	\N	\N	\N	\N	Deputy Beer Bar Manager	\N	Ambrose	\N	\N	\N
-822	\N	\N	\N	Hi,\n\\\nPrefer the Pre-paid entrance as last year.\n\\\nI prefer my surname not to be displaydd on my badge.\n\\\nLast year we put a small dot to partially cover it, that is also fine as it is easier to mange.\n\\\nReason: Having a unique name in UK, prefer strangers not to Google it!	\N	\N	\N	\N	Parkash	\N	\N	\N	\N	\N	\N	\N		\N	Mankoo	\N	\N	\N
-823	\N	\N	\N	### NOTE:  I have a first aid course booked for Monday 24th.  I've never failed one, so put me down as qualified.\n\\\n[Course name:  Emergency first aid at work (previously 'Appointed Persons')]\n\\\n\n\\\nTim Thomas says he's working Thu/Fri afternoon sessions, so if I could be on the same bar, great, if not, no worries.	\N	\N	\N	\N	Steven	\N	\N	\N	\N	\N	\N	\N		\N	Kelly	\N	\N	\N
-824	\N	\N	\N	NB I have also been invited to be a Beer judge on the Thursday p.m. \n\\\n\n\\\nI will probably work part sessions of the two I have indicated e.g. 11.30 till 6. 	\N	\N	\N	\N	John 	\N	\N	\N	\N	\N	\N	\N		\N	Dearing	\N	\N	\N
-825	\N	\N	\N		\N	\N	\N	\N	Michael	\N	\N	\N	\N	\N	\N	\N		\N	Leigh	\N	\N	\N
-826	\N	\N	\N	Working for Brian Jones for Beer Judging only	\N	\N	\N	\N	Judy	\N	\N	\N	\N	\N	\N	\N		\N	Jones	\N	\N	\N
-827	\N	\N	\N	Also, may be available for part of the Saturday daytime sessions if required	\N	\N	\N	\N	Allan	\N	\N	\N	\N	\N	\N	\N		\N	Conner	\N	\N	\N
-828	\N	\N	\N	I will probably also be able to volunteer on Saturday lunch time if requred.	\N	\N	\N	\N	Melissa	\N	\N	\N	\N	\N	\N	\N		\N	Reed	\N	\N	\N
-829	\N	\N	\N		\N	\N	\N	\N	Steve	\N	\N	\N	\N	\N	\N	\N		\N	Heming	\N	\N	\N
-830	\N	\N	\N		\N	\N	\N	\N	Tim	\N	\N	\N	\N	\N	\N	\N		\N	Ross	\N	\N	\N
-831	\N	\N	\N	Parking required for Van. Will be using small tent. I may be able to work on a little later on Monday, it depends upon what my job requires of me on Tuesday. Previously worked GBBF (Set up/Take down Elec, Volly Arms set up and working, Glasses), NWAF (Derby (Bar) & Norwich (CWBOB Bar Technical)), Great Welsh (Various), W.Dorset October Fest (Org, Set up, all festival jobs, Clear up), plus others.	\N	\N	\N	\N	Jez	\N	\N	\N	\N	\N	\N	\N		\N	Armitage	\N	\N	\N
-832	\N	\N	\N	I may be able to help on thursday during tge day but unlikely 	\N	\N	\N	\N	David	\N	\N	\N	\N	\N	\N	\N		\N	Marsh	\N	\N	\N
-833	\N	\N	\N		\N	\N	\N	\N	Karen	\N	\N	\N	\N	\N	\N	\N		\N	Garber	\N	\N	\N
-834	\N	\N	\N	Work with Chris Robinson - member 324902 (already registered)	\N	\N	\N	\N	Eileen	\N	\N	\N	\N	\N	\N	\N		\N	Bartley	\N	\N	\N
-835	\N	\N	\N	I am going to be judging two of the Championship cider & perry rounds which I am informed start at 12:30 ish. I should be available after a short break which should tie in with the 15:00 session start I hope. 	\N	\N	\N	\N	Linda	\N	\N	\N	\N	\N	\N	\N		\N	Thompson	\N	\N	\N
-836	\N	\N	\N		\N	\N	\N	\N	Tanya	\N	\N	\N	\N	\N	\N	\N		\N	Kynaston	\N	\N	\N
-837	\N	\N	\N	I'd like to work in the same beer bar area as Margaret King 121836	\N	\N	\N	\N	Ian	\N	\N	\N	\N	\N	\N	\N		\N	King	\N	\N	\N
-838	\N	\N	\N	I would like to work with my dad Richard Hand who is doing the 3pm-8pm session 	\N	\N	\N	\N	Daniel	\N	\N	\N	\N	\N	\N	\N		\N	Hand	\N	\N	\N
-839	\N	\N	\N	Hi. I have lost my card and don't know my membership number. I have put Nick as a contact but he doesn't know me except via email a few times last year. 	\N	\N	\N	\N	Matthew	\N	\N	\N	\N	\N	\N	\N		\N	Shewring	\N	\N	\N
-840	\N	\N	\N		\N	\N	\N	\N	Dean	\N	\N	\N	\N	\N	\N	\N		\N	Cornwall	\N	\N	\N
-841	\N	\N	\N	Required by John & Sue Thirlaway to assist with Foreign Beer Deliveries on Tues PM of Setup.	\N	\N	\N	\N	Simon	\N	\N	\N	\N	\N	\N	\N		\N	Grist	\N	\N	\N
-842	\N	\N	\N		\N	\N	\N	\N	Rodney	\N	\N	\N	\N	\N	\N	\N		\N	Sprigg	\N	\N	\N
-843	\N	\N	\N		\N	\N	\N	\N	Rodney	\N	\N	\N	\N	\N	\N	\N	Beer Bar Manager	\N	Sprigg	\N	\N	\N
-844	\N	\N	\N		\N	\N	\N	\N	Sophie	\N	\N	\N	\N	\N	\N	\N		\N	Neal	\N	\N	\N
-845	\N	\N	\N		\N	\N	\N	\N	Nathan	\N	\N	\N	\N	\N	\N	\N		\N	Heywood	\N	\N	\N
-846	\N	\N	\N		\N	\N	\N	\N	Connor	\N	\N	\N	\N	\N	\N	\N		\N	Froude	\N	\N	\N
-847	\N	\N	\N	Ewan Tolladay is the person whom put me onto volunteering for the beer festival and i'd really love to help out :) 	\N	\N	\N	\N	Robert Mathue James Phillip	\N	\N	\N	\N	\N	\N	\N		\N	Hart	\N	\N	\N
-848	\N	\N	\N		\N	\N	\N	\N	Timothy	\N	\N	\N	\N	\N	\N	\N		\N	Harden	\N	\N	\N
-849	\N	\N	\N		\N	\N	\N	\N	Angela	\N	\N	\N	\N	\N	\N	\N		\N	Jones	\N	\N	\N
-850	\N	\N	\N	I'm coming to help Tanya in the kitchen	\N	\N	\N	\N	Jenni	\N	\N	\N	\N	\N	\N	\N		\N	Leask	\N	\N	\N
-851	\N	\N	\N	I'm vouched for by Nick Hames	\N	\N	\N	\N	Chip	\N	\N	\N	\N	\N	\N	\N		\N	Charlesworth	\N	\N	\N
-852	\N	\N	\N	If I could work in the same area as James Richardson and/or Roger Brown, that would be great.	\N	\N	\N	\N	Martin	\N	\N	\N	\N	\N	\N	\N		\N	McCloud	\N	\N	\N
-853	\N	\N	\N	I have lots of cider bar experience being cider officer for North London, but am happy to work on beer bars including foreign beer.	\N	\N	\N	\N	Jessica	\N	\N	\N	\N	\N	\N	\N		\N	Marsh	\N	\N	\N
-854	\N	\N	\N		\N	\N	\N	\N	tim	\N	\N	\N	\N	\N	\N	\N		\N	burchell	\N	\N	\N
-855	\N	\N	\N	Sharing a caravan with Rod Sprigg - bar manager.  He is hopefully arriving Wednesday	\N	\N	\N	\N	Hazel	\N	\N	\N	\N	\N	\N	\N		\N	Sprigg	\N	\N	\N
-856	\N	\N	\N		\N	\N	\N	\N	Dipesh	\N	\N	\N	\N	\N	\N	\N		\N	Amin	\N	\N	\N
-857	\N	\N	\N		\N	\N	\N	\N	Robert	\N	\N	\N	\N	\N	\N	\N		\N	Cruse	\N	\N	\N
-858	\N	\N	\N		\N	\N	\N	\N	Alan	\N	\N	\N	\N	\N	\N	\N		\N	Harper	\N	\N	\N
-859	\N	\N	\N	I have spoken with Chris Rouse about helping out with cider comp starting about 12:30pm on Friday and Saturday afternoons, he told me to sign up as staff. I will also be available to work on the cider bar after the competition finishes on friday and before it starts on the saturday. Cheers	\N	\N	\N	\N	ALISTAIR	\N	\N	\N	\N	\N	\N	\N		\N	SMITH	\N	\N	\N
-860	\N	\N	\N		\N	\N	\N	\N	John	\N	\N	\N	\N	\N	\N	\N		\N	Abramson	\N	\N	\N
-861	\N	\N	\N	partner of Ryan Shook. 	\N	\N	\N	\N	natalie 	\N	\N	\N	\N	\N	\N	\N		\N	harrington	\N	\N	\N
-862	\N	\N	\N		\N	\N	\N	\N	Ivan	\N	\N	\N	\N	\N	\N	\N		\N	Szrejder	\N	\N	\N
-863	\N	\N	\N	If he's working the bar too, I'd like Ricky Moysey to be put with me.	\N	\N	\N	\N	Jamie	\N	\N	\N	\N	\N	\N	\N	Beer Orderer	\N	Duffield	\N	\N	\N
-864	\N	\N	\N		\N	\N	\N	\N	ross	\N	\N	\N	\N	\N	\N	\N		\N	Chester	\N	\N	\N
-865	\N	\N	\N		\N	\N	\N	\N	Bart	\N	\N	\N	\N	\N	\N	\N		\N	Weeks	\N	\N	\N
-866	\N	\N	\N		\N	\N	\N	\N	Ricky	\N	\N	\N	\N	\N	\N	\N	Beer Orderer	\N	Moysey	\N	\N	\N
-867	\N	\N	\N		\N	\N	\N	\N	Liam	\N	\N	\N	\N	\N	\N	\N		\N	Kavanagh	\N	\N	\N
-868	\N	\N	\N	Please don't assign me to any areas as I'm already on site team. I'll be on site every day from Sat 22nd Apr  to Tues 2nd May.	\N	\N	\N	\N	Naomi	\N	\N	\N	\N	\N	\N	\N	General Open Manager	\N	Withey	\N	\N	\N
-869	\N	\N	\N		\N	\N	\N	\N	Samuel	\N	\N	\N	\N	\N	\N	\N		\N	Catterall-Young	\N	\N	\N
-870	\N	\N	\N	Site Team	\N	\N	\N	\N	Gareth	\N	\N	\N	\N	\N	\N	\N		\N	Llewellyn	\N	\N	\N
-871	\N	\N	\N	Site Team.	\N	\N	\N	\N	Bret	\N	\N	\N	\N	\N	\N	\N		\N	Colloff	\N	\N	\N
-872	\N	\N	\N		\N	\N	\N	\N	Peter	\N	\N	\N	\N	\N	\N	\N		\N	Gibbins	\N	\N	\N
-873	\N	\N	\N	PA system and Thursday PA for events such as Paul Sinha Quiz.\n\\\n	\N	\N	\N	\N	Martin	\N	\N	\N	\N	\N	\N	\N		\N	Hoare	\N	\N	\N
-874	\N	\N	\N	Teddy bear shirt size	\N	\N	\N	\N	Doris	\N	\N	\N	\N	\N	\N	\N	Chief Executive Officer	\N	Panda	\N	\N	\N
-875	\N	\N	\N		\N	\N	\N	\N	Laura	\N	\N	\N	\N	\N	\N	\N		\N	Meegan	\N	\N	\N
-876	\N	\N	\N		\N	\N	\N	\N	SIMON	\N	\N	\N	\N	\N	\N	\N		\N	NUTTALL	\N	\N	\N
-877	\N	\N	\N		\N	\N	\N	\N	Michael	\N	\N	\N	\N	\N	\N	\N		\N	Hammer	\N	\N	\N
-878	\N	\N	\N		\N	\N	\N	\N	Anthony	\N	\N	\N	\N	\N	\N	\N		\N	Saunders	\N	\N	\N
-879	\N	\N	\N		\N	\N	\N	\N	Adam	\N	\N	\N	\N	\N	\N	\N		\N	Miller	\N	\N	\N
-880	\N	\N	\N	I could actually work further sessions if needed. \n\\\nI doubt if this would help but I am a French speaking Belgian.\n\\\nI'm 70 but fit.\n\\\nLooking forward to the festival.	\N	\N	\N	\N	James	\N	\N	\N	\N	\N	\N	\N		\N	Murphy	\N	\N	\N
-881	\N	\N	\N	I'm helping Chris Rouse with a tasting panel for Cider competition, as I'm about I am happy to be put to work once my business is done.	\N	\N	\N	\N	Paul	\N	\N	\N	\N	\N	\N	\N		\N	Sanders	\N	\N	\N
-882	\N	\N	\N	Work with Matthew Shewring if possible please	\N	\N	\N	\N	Simon	\N	\N	\N	\N	\N	\N	\N		\N	Cook	\N	\N	\N
-883	\N	\N	\N	Helping Tim Loyd as part of cellar management 	\N	\N	\N	\N	Kevin	\N	\N	\N	\N	\N	\N	\N		\N	Black	\N	\N	\N
-884	\N	\N	\N		\N	\N	\N	\N	Stephen	\N	\N	\N	\N	\N	\N	\N		\N	Cooley	\N	\N	\N
-885	\N	\N	\N		\N	\N	\N	\N	Mark	\N	\N	\N	\N	\N	\N	\N		\N	Rickson 	\N	\N	\N
-886	\N	\N	\N		\N	\N	\N	\N	Paul	\N	\N	\N	\N	\N	\N	\N		\N	Anderson	\N	\N	\N
-887	\N	\N	\N		\N	\N	\N	\N	James	\N	\N	\N	\N	\N	\N	\N		\N	Marshall	\N	\N	\N
-888	\N	\N	\N		\N	\N	\N	\N	Geoff	\N	\N	\N	\N	\N	\N	\N		\N	Keen	\N	\N	\N
-889	\N	\N	\N		\N	\N	\N	\N	Eric	\N	\N	\N	\N	\N	\N	\N		\N	Warner	\N	\N	\N
-890	\N	\N	\N		\N	\N	\N	\N	Laura	\N	\N	\N	\N	\N	\N	\N		\N	Meegan	\N	\N	\N
-891	\N	\N	\N		\N	\N	\N	\N	John	\N	\N	\N	\N	\N	\N	\N		\N	Sims	\N	\N	\N
-892	\N	\N	\N		\N	\N	\N	\N	Graham	\N	\N	\N	\N	\N	\N	\N		\N	Bishop	\N	\N	\N
-893	\N	\N	\N		\N	\N	\N	\N	Matthew	\N	\N	\N	\N	\N	\N	\N		\N	Debney	\N	\N	\N
+51	\N	f	f	\N	f		f	f		f	f	\N		f	\N	\N	\N	f		\N	\N	f
+1951	\N	f	f	\N	f	nick.jerram@gmail.com	f	f	A	f	f	\N	\N	f	\N	\N	\N	f	A	\N	cb871fb3-6262-4669-a217-e8b6276c7e44	f
+101	\N	f	f		f	\N	f	f	Fred	f	f	\N	\N	f	\N	\N		f	Flintstone	\N	\N	f
+654	\N	f	f		f	\N	f	f	Chris	f	f	\N	\N	f	\N	\N		f	Elliott	\N	\N	f
+1751	\N	f	f		f	nick.jerram@googlemail.com	t	f	Nick	f	t		176340	f	\N	\N	\N	f	Jerram	\N	111	t
+1801	\N	f	f	\N	f	a@a	f	f	a	f	f	\N	\N	f	\N	\N	\N	f	a	\N	e31ed14e-5988-41d6-821e-0107bee35fbe	f
+724	\N	f	f		f	\N	f	f	Elvis	f	f	\N	\N	f	\N	\N		f	Evans	\N	\N	f
+725	\N	f	f		f	\N	f	f	Andrew	f	f	\N	\N	f	\N	\N		f	Waterfall	\N	\N	f
+726	\N	f	f		f	\N	f	f	Stuart	f	f	\N	\N	f	\N	\N		f	Evans	\N	\N	f
+727	\N	f	f	Wish to work alongside Stuart Evans. 	f	\N	f	f	Lisa	f	f	\N	\N	f	\N	\N		f	Ruffell	\N	\N	f
+728	\N	f	f	Past games volunteer	f	\N	f	f	Stephen	f	f	\N	\N	f	\N	\N		f	Smith	\N	\N	f
+729	\N	f	f	Friday I will need to leave at about 6.30pm\n\\\nWork in Cash Hut	f	\N	f	f	Sandra	f	f	\N	\N	f	\N	\N		f	Gill	\N	\N	f
+730	\N	f	f	Sorry to be picky, but I can work between 10.15 and 18.00 (could hang on if it's really busy or you're short-staffed). Hope this fits with what you need. If not, please let me know.	f	\N	f	f	Nick	f	f	\N	\N	f	\N	\N		f	Browne	\N	\N	f
+731	\N	f	f		f	\N	f	f	Giles	f	f	\N	\N	f	\N	\N		f	Nuttall	\N	\N	f
+732	\N	f	f		f	\N	f	f	Soffi	f	f	\N	\N	f	\N	\N		f	James	\N	\N	f
+733	\N	f	f	Ideally with Graham May	f	\N	f	f	Philip	f	f	\N	\N	f	\N	\N		f	Rassell	\N	\N	f
+734	\N	f	f	Work the same sessions as my wife member no 536223 (Ann Martin-Jones)	f	\N	f	f	Martin	f	f	\N	\N	f	\N	\N		f	Jones	\N	\N	f
+735	\N	f	f	Work the same sessions as my husband - member no 536222 ( Martin Jones) 	f	\N	f	f	Ann	f	f	\N	\N	f	\N	\N		f	Martin Jones	\N	\N	f
+736	\N	f	f	Can you please allocate me to back of house.\n\\\n\n\\\nI will be sorting cask ends and helping cover on entrance and some other bits for the few days I am on site.	f	\N	f	f	Adam	f	f	\N	\N	f	\N	\N		f	Gent	\N	\N	f
+737	\N	f	f	Please can I work on the same bar as Evelyn Harrison-Bullock.	f	\N	f	f	Josh	f	f	\N	\N	f	\N	\N		f	Harrison-Bullock	\N	\N	f
+738	\N	f	f		f	\N	f	f	Mark	f	f	\N	\N	f	\N	\N		f	Rickson	\N	\N	f
+740	\N	f	f	For the last few years I've worked on the wine bar, so I'm familiar with the products and procedures. If possible I would like to work on the wine bar again this year - thanks!	f	\N	f	f	Frances	f	f	\N	\N	f	\N	\N		f	McFadden	\N	\N	f
+741	\N	f	f		f	\N	f	f	Neil	f	f	\N	\N	f	\N	\N		f	Lavington	\N	\N	f
+742	\N	f	f		f	\N	f	f	grace	f	f	\N	\N	f	\N	\N		f	Bradbrook	\N	\N	f
+743	\N	f	f	Would like to do a few hours on the Thursday evening, this would depend on what time I am able to finish work so you need to confirm.\n\\\nAlso a few hours on the Friday late morning / early afternoon.\n\\\nI'd like to work with Grace Bradbrook, or Graham or Sharon who are also volunteering. 	f	\N	f	f	lesley	f	f	\N	\N	f	\N	\N		f	buckley	\N	\N	f
+744	\N	f	f		f	\N	f	f	James	f	f	\N	\N	f	\N	\N		f	Milne	\N	\N	f
+745	\N	f	f		f	\N	f	f	Simon	f	f	\N	\N	f	\N	\N		f	Hanson	\N	\N	f
+746	\N	f	f		f	\N	f	f	Antony	f	f	\N	\N	f	\N	\N		f	Walbank	\N	\N	f
+813	\N	f	f	Work same area/times as Eileen Bartley #324903\n\\\n	f	\N	f	f	Chris	f	f	\N	\N	f	\N	\N		f	Robinson	\N	\N	f
+814	\N	f	f		f	\N	f	f	Gregory	f	f	\N	\N	f	\N	\N		f	Cloney	\N	\N	f
+815	\N	f	f		f	\N	f	f	James	f	f	\N	\N	f	\N	\N		f	McNally	\N	\N	f
+853	\N	f	f	I have lots of cider bar experience being cider officer for North London, but am happy to work on beer bars including foreign beer.	f	\N	f	f	Jessica	f	f	\N	\N	f	\N	\N		f	Marsh	\N	\N	f
+854	\N	f	f		f	\N	f	f	tim	f	f	\N	\N	f	\N	\N		f	burchell	\N	\N	f
+855	\N	f	f	Sharing a caravan with Rod Sprigg - bar manager.  He is hopefully arriving Wednesday	f	\N	f	f	Hazel	f	f	\N	\N	f	\N	\N		f	Sprigg	\N	\N	f
+856	\N	f	f		f	\N	f	f	Dipesh	f	f	\N	\N	f	\N	\N		f	Amin	\N	\N	f
+857	\N	f	f		f	\N	f	f	Robert	f	f	\N	\N	f	\N	\N		f	Cruse	\N	\N	f
+858	\N	f	f		f	\N	f	f	Alan	f	f	\N	\N	f	\N	\N		f	Harper	\N	\N	f
+860	\N	f	f		f	\N	f	f	John	f	f	\N	\N	f	\N	\N		f	Abramson	\N	\N	f
+861	\N	f	f	partner of Ryan Shook. 	f	\N	f	f	natalie 	f	f	\N	\N	f	\N	\N		f	harrington	\N	\N	f
+862	\N	f	f		f	\N	f	f	Ivan	f	f	\N	\N	f	\N	\N		f	Szrejder	\N	\N	f
+609	\N	f	f		f	\N	f	f	Duncan	f	f	\N	\N	f	\N	\N		f	Ward	\N	\N	f
+610	\N	f	f		f	\N	f	f	Roy	f	f	\N	\N	f	\N	\N	Beer Bar Manager	f	Garraway	\N	\N	f
+611	\N	f	f		f	\N	f	f	Andrew	f	f	\N	\N	f	\N	\N		f	Kitney	\N	\N	f
+612	\N	f	f	Hi Nick\n\\\n\n\\\nI will be doing the Friday night of set up until the night team arrives as per usual and then joining the site team for the Saturday of set up. A T shirt would be nice this year as last year I did set up and later in the week and received none.\n\\\n\n\\\nI've put down for the Monday of set up so that the form becomes active. I will not be around on the Monday of Set up.\n\\\n\n\\\nCheers James\n\\\n	f	\N	f	f	James	f	f	\N	\N	f	\N	\N		f	Shipp	\N	\N	f
+613	\N	f	f	If you get short staffed I may be able to do more hours than I have marked.\n\\\nI have worked your last 3 beer fests so I should be in your volunteer records.  	f	\N	f	f	Lee	f	f	\N	\N	f	\N	\N		f	Keates	\N	\N	f
+614	\N	f	f	I may be in at 11.00 on the Friday morning.	f	\N	f	f	Alan	f	f	\N	\N	f	\N	\N		f	Hawkins	\N	\N	f
+615	\N	f	f		f	\N	f	f	Simon	f	f	\N	\N	f	\N	\N		f	Berry	\N	\N	f
+616	\N	f	f		f	\N	f	f	Anthony	f	f	\N	\N	f	\N	\N		f	Collins	\N	\N	f
+617	\N	f	f	I have said I will do Monday 1st on takedown, this is going to be suject to weather I have to work or not as it's a Bank Holiday I won't know until the week before.	f	\N	f	f	Trevor	f	f	\N	\N	f	\N	\N		f	Pemberton	\N	\N	f
+618	\N	f	f		f	\N	f	f	Lyndon	f	f	\N	\N	f	\N	\N		f	Sharpe	\N	\N	f
+619	\N	f	f		f	\N	f	f	Chris	f	f	\N	\N	f	\N	\N		f	Jarvis	\N	\N	f
+620	\N	f	f		f	\N	f	f	Barry	f	f	\N	\N	f	\N	\N		f	Webb	\N	\N	f
+621	\N	f	f		f	\N	f	f	Greg	f	f	\N	\N	f	\N	\N		f	Davies	\N	\N	f
+622	\N	f	f	I may want a camping space and if I do will work more sessions but I will know by the end of this month	f	\N	f	f	Stephen	f	f	\N	\N	f	\N	\N		f	Mcgrath	\N	\N	f
+623	\N	f	f		f	\N	f	f	Tracy	f	f	\N	\N	f	\N	\N		f	Tester	\N	\N	f
+624	\N	f	f	I'm part of the games team that's worked on there for many years so please can I get put there again.	f	\N	f	f	Tes	f	f	\N	\N	f	\N	\N		f	Matthews	\N	\N	f
+625	\N	f	f		f	\N	f	f	Kirk	f	f	\N	\N	f	\N	\N		f	Winkler	\N	\N	f
+626	\N	f	f	I will be on site from around 11 am. to 5 pm. to oversee the finals of the National Cider and Perry Championships.	f	\N	f	f	Andrea	f	f	\N	\N	f	\N	\N		f	Briers	\N	\N	f
+627	\N	f	f	Kennet Morris. Serving in kit. With the rest of the side if possible. 	f	\N	f	f	Glenn	f	f	\N	\N	f	\N	\N		f	Barrett	\N	\N	f
+628	\N	f	f		f	\N	f	f	John	f	f	\N	\N	f	\N	\N		f	McGarvey	\N	\N	f
+629	\N	f	f		f	\N	f	f	Eugene	f	f	\N	\N	f	\N	\N		f	McSorley	\N	\N	f
+630	\N	f	f	Will be with the Kennet Morris Men for their Sessions .	f	\N	f	f	Max	f	f	\N	\N	f	\N	\N		f	Beare	\N	\N	f
+631	\N	f	f		f	\N	f	f	John	f	f	\N	\N	f	\N	\N		f	Maiden	\N	\N	f
+632	\N	f	f		f	\N	f	f	Jennifer	f	f	\N	\N	f	\N	\N	Deputy Games Manager	f	Farley	\N	\N	f
+633	\N	f	f	Normally I work on the Foreign Beer Bar clearing empties,  replenishing shelves and generally keeping the back area tidy as well as working as a relief on Camra Products and Glasses.\n\\\n	f	\N	f	f	Laurence	f	f	\N	\N	f	\N	\N		f	Hansford	\N	\N	f
+634	\N	f	f		f	\N	f	f	Iain	f	f	\N	\N	f	\N	\N		f	Cresswell	\N	\N	f
+635	\N	f	f	Hoping to man one of the bars in kit with the Kennet Morris Men.	f	\N	f	f	Chris	f	f	\N	\N	f	\N	\N		f	Tunnicliffe	\N	\N	f
+636	\N	f	f	Can you put me with the lovely Miss Kate (Hannah) Martin? Thanks!	f	\N	f	f	Caroline	f	f	\N	\N	f	\N	\N		f	Middlehurst	\N	\N	f
+637	\N	f	f		f	\N	f	f	Christopher	f	f	\N	\N	f	\N	\N		f	Hinton	\N	\N	f
+638	\N	f	f	Work with Caroline Middlehurst for the Friday and Saturday shifts please	f	\N	f	f	Kate	f	f	\N	\N	f	\N	\N		f	Martin	\N	\N	f
+640	\N	f	f		f	\N	f	f	John	f	f	\N	\N	f	\N	\N		f	Abramson	\N	\N	f
+641	\N	f	f		f	\N	f	f	Malcolm	f	f	\N	\N	f	\N	\N		f	Graham	\N	\N	f
+642	\N	f	f	Deputy Bar Manager on Foreign Bar	f	\N	f	f	Stephen	f	f	\N	\N	f	\N	\N	Deputy Foreign Bar Manager	f	Jackson	\N	\N	f
+643	\N	f	f		f	\N	f	f	James	f	f	\N	\N	f	\N	\N		f	Moore	\N	\N	f
+644	\N	f	f		f	\N	f	f	Roger	f	f	\N	\N	f	\N	\N		f	Butland	\N	\N	f
+645	\N	f	f		f	\N	f	f	Neil	f	f	\N	\N	f	\N	\N		f	Munkman	\N	\N	f
+646	\N	f	f		f	\N	f	f	Michael	f	f	\N	\N	f	\N	\N		f	Oliver	\N	\N	f
+647	\N	f	f	Might be around for more sessions if needed but won't know until closer to the time	f	\N	f	f	Dom	f	f	\N	\N	f	\N	\N		f	Humphries	\N	\N	f
+648	\N	f	f	I am cellar manager this year	f	\N	f	f	Timothy	f	f	\N	\N	f	\N	\N	Cellar Manager	f	Lloyd	\N	\N	f
+649	\N	f	f	Deputy Entrance :-)	f	\N	f	f	Oliver	f	f	\N	\N	f	\N	\N	Deputy Entrance Manager	f	Seaman	\N	\N	f
+650	\N	f	f		f	\N	f	f	Andrew	f	f	\N	\N	f	\N	\N		f	Young	\N	\N	f
+651	\N	f	f	I am happy to assist Brian Jones in the Beer Tasting panels.\n\\\nI am happy to work on Keith Jordan's bar and be Deputy Bar Manager for him.	f	\N	f	f	Bob	f	f	\N	\N	f	\N	\N	Deputy Beer Bar Manager	f	Smith	\N	\N	f
+652	\N	f	f		f	\N	f	f	Bob	f	f	\N	\N	f	\N	\N		f	Brodie	\N	\N	f
+603	\N	f	f		f	\N	f	f	Robert	f	f	\N	\N	f	\N	\N		f	Hussey	\N	\N	f
+653	\N	f	f	Monday to Wednesday on cellar team\n\\\nThursday to Sunday as bar manager	f	\N	f	f	Ian	f	f	\N	\N	f	\N	\N	Deputy Beer Bar Manager	f	Davey	\N	\N	f
+655	\N	f	f		f	\N	f	f	David	f	f	\N	\N	f	\N	\N		f	Zajac	\N	\N	f
+656	\N	f	f		f	\N	f	f	Claudia	f	f	\N	\N	f	\N	\N		f	Wittkowske	\N	\N	f
+657	\N	f	f		f	\N	f	f	Matthew	f	f	\N	\N	f	\N	\N		f	Little	\N	\N	f
+658	\N	f	f	I'd like to work with Jamie Ryan please.	f	\N	f	f	Laura	f	f	\N	\N	f	\N	\N		f	Jackaman	\N	\N	f
+659	\N	f	f	I'll be assisting Brian Jones et al with fetching and carrying for the Thursday afternoon ales judging.	f	\N	f	f	Peter	f	f	\N	\N	f	\N	\N		f	de Courcy	\N	\N	f
+660	\N	f	f	I would like to work with Laura Jackaman please.	f	\N	f	f	Jamie	f	f	\N	\N	f	\N	\N		f	Ryan	\N	\N	f
+661	\N	f	f	I may be available for other session but will not know until nearer Festival.	f	\N	f	f	David	f	f	\N	\N	f	\N	\N		f	Lawton	\N	\N	f
+662	\N	f	f		f	\N	f	f	Judy	f	f	\N	\N	f	\N	\N		f	Beale	\N	\N	f
+663	\N	f	f	Working in the cellar team as in previous years.	f	\N	f	f	Derek	f	f	\N	\N	f	\N	\N		f	Jones	\N	\N	f
+664	\N	f	f	I would like to please work in the beer bar with my son Oliver Billing.	f	\N	f	f	Mark	f	f	\N	\N	f	\N	\N		f	Billing	\N	\N	f
+665	\N	f	f	Will be working with the cellar team. I might be able to work Saturday, need to check if I'm due to be going to football or not.	f	\N	f	f	Adrian	f	f	\N	\N	f	\N	\N		f	Bean	\N	\N	f
+672	\N	f	f		f	\N	f	f	Andrew	f	f	\N	\N	f	\N	\N		f	Cresswell	\N	\N	f
+673	\N	f	f	Nick,\n\\\nDue to the fact that I am on crutches this year - following an operation in December - I am restricted in what I can do.  I have spoken with Dave and agreed that I will provide support where possible, with the primary task being the set-up and support for the office, along with other tasks that I can achieve.\n\\\n\n\\\nThanking you\n\\\n\n\\\nArfs	f	\N	f	f	Arthur	f	f	\N	\N	f	\N	\N		f	Pounder	\N	\N	f
+674	\N	f	f	Kennet Morris man\n\\\nDancing Saturday day\n\\\nBeer judging Thursday day\n\\\nTraffic or barrel shifting\n\\\nMonday to Thursday lunchtime	f	\N	f	f	Simon	f	f	\N	\N	f	\N	\N		f	Bracegirdle	\N	\N	f
+675	\N	f	f		f	\N	f	f	Douglas	f	f	\N	\N	f	\N	\N		f	Cross	\N	\N	f
+676	\N	f	f		f	\N	f	f	Wayne	f	f	\N	\N	f	\N	\N		f	Steel	\N	\N	f
+678	\N	f	f	Monday and weds day to help with staff catering	f	\N	f	f	SUSAN	f	f	\N	\N	f	\N	\N		f	TAYLOR	\N	\N	f
+679	\N	f	f	Part of Site Team. probably about for 22nd & 23rd as well	f	\N	f	f	Ron	f	f	\N	\N	f	\N	\N		f	Haskins	\N	\N	f
+680	\N	f	f		f	\N	f	f	John	f	f	\N	\N	f	\N	\N		f	Thompson	\N	\N	f
+681	\N	f	f		f	\N	f	f	Patrick	f	f	\N	\N	f	\N	\N		f	Grant	\N	\N	f
+684	\N	f	f	On days where I've volunteered for late sessions I'll need to leave at 22:45 in order to catch last bus home.	f	\N	f	f	Laura	f	f	\N	\N	f	\N	\N		f	Bilbe	\N	\N	f
+685	\N	f	f		f	\N	f	f	Charles	f	f	\N	\N	f	\N	\N		f	Brinley Codd	\N	\N	f
+778	\N	f	f		f	\N	f	f	Hayley	f	f	\N	\N	f	\N	\N		f	Price	\N	\N	f
+775	\N	f	f		f	\N	f	f	Andrew	f	f	\N	\N	f	\N	\N		f	Johnson	\N	\N	f
+574	\N	f	f	Can I be in the same area as David Hassell and Rachel  Siertsema\n\\\n\n\\\nThis is the third time I have submitted this form. I tried on 5th and 18th April and\n\\\nhave not heard back if I have been accepted or not. I also sent a direct email on 19th April. Both David and Rachel mentioned above got an accetance email on the 14th. I did get an automated reply when submitting the form from staffing@readingbeerfestival.org.uk so I don't think it is a spam filter issue, if I auctually have been sent an accetance email.\n\\\n\n\\\nAn alternative email is sswilson9876@gmail.com but I can't change this in the form above.\n\\\n\n\\\nCould you let me know ASAP if I've been accepted?	f	\N	f	f	Simon	f	f	\N	\N	f	\N	\N		f	Wilson	\N	\N	f
+577	\N	f	f		f	\N	f	f	Andy	f	f	\N	\N	f	\N	\N		f	Pinkard	\N	\N	f
+578	\N	f	f		f	\N	f	f	Elspeth	f	f	\N	\N	f	\N	\N		f	Brady	\N	\N	f
+579	\N	f	f		f	\N	f	f	Richard	f	f	\N	\N	f	\N	\N		f	Russell	\N	\N	f
+580	\N	f	f	Request to work with Will Burchell #288853	f	\N	f	f	Mike	f	f	\N	\N	f	\N	\N		f	Garner	\N	\N	f
+581	\N	f	f	Same area as Ashish Naik	f	\N	f	f	Aaron	f	f	\N	\N	f	\N	\N		f	Edgcumbe	\N	\N	f
+582	\N	f	f		f	\N	f	f	Alex	f	f	\N	\N	f	\N	\N		f	Harkness	\N	\N	f
+583	\N	f	f		f	\N	f	f	Nicky	f	f	\N	\N	f	\N	\N		f	Rhoods	\N	\N	f
+584	\N	f	f		f	\N	f	f	Kenneth	f	f	\N	\N	f	\N	\N		f	Baker	\N	\N	f
+585	\N	f	f	I am aiming to arrive on Wednesday 19th and stay to the end of takedown. I will be bringing my office equipment in my van and will need a parking space for it on site. I have agreed to be the radio manager again but will be able to help out on other jobs throughout setup and takedown.	f	\N	f	f	David	f	f	\N	\N	f	\N	\N	Radio Manager	f	Jones	\N	\N	f
+586	\N	f	f		f	\N	f	f	Jennie	f	f	\N	\N	f	\N	\N		f	Walker	\N	\N	f
+587	\N	f	f		f	\N	f	f	Kathryn	f	f	\N	\N	f	\N	\N		f	Jarvis	\N	\N	f
+588	\N	f	f	Takedown Tuesday 2 May only able to work untill 13.00. Prefer to work with AJD Wheatcroft	f	\N	f	f	Cleo	f	f	\N	\N	f	\N	\N		f	Wheatcroft	\N	\N	f
+589	\N	f	f	Only able to work up to 13.00 on Tuesday 02 May. Prefer to work with C. Wheatcroft	f	\N	f	f	Andrew	f	f	\N	\N	f	\N	\N		f	Wheatcroft	\N	\N	f
+590	\N	f	f		f	\N	f	f	Katy	f	f	\N	\N	f	\N	\N		f	Aldridge	\N	\N	f
+591	\N	f	f		f	\N	f	f	Sarah	f	f	\N	\N	f	\N	\N		f	Rigby	\N	\N	f
+669	\N	f	f		f	\N	f	f	John	f	f	\N	\N	f	\N	\N	Foreign Beer Orderer	f	Thirlaway	\N	\N	f
+881	\N	f	f	I'm helping Chris Rouse with a tasting panel for Cider competition, as I'm about I am happy to be put to work once my business is done.	f	\N	f	f	Paul	f	f	\N	\N	f	\N	\N		f	Sanders	\N	\N	f
+882	\N	f	f	Work with Matthew Shewring if possible please	f	\N	f	f	Simon	f	f	\N	\N	f	\N	\N		f	Cook	\N	\N	f
+884	\N	f	f		f	\N	f	f	Stephen	f	f	\N	\N	f	\N	\N		f	Cooley	\N	\N	f
+869	\N	f	f		f	\N	f	f	Samuel	f	f	\N	\N	f	\N	\N		f	Catterall-Young	\N	\N	f
+593	\N	f	f	My husband will volunteer on the same session , can we work the same bar - his CAMRA number is 277293	f	\N	f	f	Christine	f	f	\N	\N	f	\N	\N		f	Watson	\N	\N	f
+594	\N	f	f	Thought I could make it, unfortunately it turns out I have an exam that week and so cannot. Please don't allocate. Sorry	f	\N	f	f	Alexei	f	f	\N	\N	f	\N	\N		f	Samarenko	\N	\N	f
+596	\N	f	f	 I would be best suited on entrance and glasses. Cannot do any heavy lifting. 	f	\N	f	f	Rachel	f	f	\N	\N	f	\N	\N		f	Bulcock	\N	\N	f
+597	\N	f	f		f	\N	f	f	Jim	f	f	\N	\N	f	\N	\N		f	Kullander	\N	\N	f
+598	\N	f	f		f	\N	f	f	Anne	f	f	\N	\N	f	\N	\N		f	Thomas	\N	\N	f
+599	\N	f	f	If possible could I have a 3XL T-shirt if available if not XXL will do but could be a little tight.	f	\N	f	f	Nicholas	f	f	\N	\N	f	\N	\N		f	Cornish	\N	\N	f
+600	\N	f	f	I volunteered last year and find that i'm best suited behind the bar, happy to help on the camera stand as well :)\n\\\nForeign beer is my speciality knowledge.	f	\N	f	f	Zoe	f	f	\N	\N	f	\N	\N		f	Andrews	\N	\N	f
+601	\N	f	f		f	\N	f	f	Mitch	f	f	\N	\N	f	\N	\N		f	Bateman 	\N	\N	f
+602	\N	f	f		f	\N	f	f	Katy	f	f	\N	\N	f	\N	\N		f	Turgoose	\N	\N	f
+682	\N	f	f		f	\N	f	f	David	f	f	\N	\N	f	\N	\N		f	Bumstead	\N	\N	f
+604	\N	f	f	Applying for stewards but after previous conversation with the CS I would like to continue training and working in the radio control room. 	f	\N	f	f	Rhea	f	f	\N	\N	f	\N	\N		f	Sloman	\N	\N	f
+605	\N	f	f		f	\N	f	f	Greg	f	f	\N	\N	f	\N	\N		f	Clarke	\N	\N	f
+606	\N	f	f		f	\N	f	f	Graham	f	f	\N	\N	f	\N	\N		f	Bradbrook	\N	\N	f
+607	\N	f	f		f	\N	f	f	John	f	f	\N	\N	f	\N	\N		f	Maiden	\N	\N	f
+608	\N	f	f		f	\N	f	f	Tony	f	f	\N	\N	f	\N	\N		f	Girling	\N	\N	f
+666	\N	f	f		f	\N	f	f	Tom	f	f	\N	\N	f	\N	\N		f	Hughes	\N	\N	f
+667	\N	f	f		f	\N	f	f	Ben	f	f	\N	\N	f	\N	\N		f	Skidmore	\N	\N	f
+748	\N	f	f	I have helped in setup + cellar team) at ascot festival, but have no qualifications! I am available during the day w/c 23/4 and possibly week after. But not every day! Could fit in if u have particular need? Definitely no evenings until Saturday 29th if that makes sense.	f	\N	f	f	Peter	f	f	\N	\N	f	\N	\N		f	Lucey	\N	\N	f
+749	\N	f	f	Work with Kirk Winkler	f	\N	f	f	Cheryl	f	f	\N	\N	f	\N	\N		f	Irwin	\N	\N	f
+750	\N	f	f	Bar manager (Bar D?)\n\\\nWill work set up Wednesday if necessary, but would prefer a day off between working set up and bar manager, if possible.	f	\N	f	f	Keith	f	f	\N	\N	f	\N	\N	Beer Bar Manager	f	Jordan	\N	\N	f
+751	\N	f	f	Would like time off on Thursday evening to join the quiz.	f	\N	f	f	Sheila	f	f	\N	\N	f	\N	\N		f	Jordan	\N	\N	f
+752	\N	f	f		f	\N	f	f	Thomas	f	f	\N	\N	f	\N	\N		f	Burke	\N	\N	f
+753	\N	f	f	Cider Bar Manager\n\\\nWhat setup sessions I do depends on when the cider deliveries are.\n\\\nI will be there Saturday 22 Apr for cider stillage and bar construction (unless it's a different day).	f	\N	f	f	Chris	f	f	\N	\N	f	\N	\N	Cider Bar Manager	f	Rouse	\N	\N	f
+754	\N	f	f	All timings approximate as dependent on what shift I get at work on the day.	f	\N	f	f	Michael	f	f	\N	\N	f	\N	\N		f	Dunstan	\N	\N	f
+755	\N	f	f		f	\N	f	f	Helen	f	f	\N	\N	f	\N	\N		f	Toomey	\N	\N	f
+756	\N	f	f	Would like to work with James Elsmore	f	\N	f	f	Tim	f	f	\N	\N	f	\N	\N		f	Freeman	\N	\N	f
+757	\N	f	f		f	\N	f	f	Ian	f	f	\N	\N	f	\N	\N		f	Tanner	\N	\N	f
+758	\N	f	f		f	\N	f	f	Stephen	f	f	\N	\N	f	\N	\N		f	Surridge	\N	\N	f
+759	\N	f	f	I have worked on set-up over the last few years and I have decided to do it again this year. I have also been on the Cellar Team at Ascot Racecourse Beer Festival for the last few years also. I may do set-up on Wednesday, but will see how Monday and Tuesday go.	f	\N	f	f	Clive	f	f	\N	\N	f	\N	\N		f	Doran	\N	\N	f
+760	\N	f	f	I need to leave at 2300 to catch the last train home.	f	\N	f	f	Norman	f	f	\N	\N	f	\N	\N		f	Sutton	\N	\N	f
+761	\N	f	f		f	\N	f	f	David	f	f	\N	\N	f	\N	\N		f	Harper	\N	\N	f
+762	\N	f	f		f	\N	f	f	Jonathan	f	f	\N	\N	f	\N	\N		f	Inglis	\N	\N	f
+763	\N	f	f	Working in the treasury.	f	\N	f	f	Phillip	f	f	\N	\N	f	\N	\N		f	Gill	\N	\N	f
+764	\N	f	f		f	\N	f	f	Heather	f	f	\N	\N	f	\N	\N		f	Lawn	\N	\N	f
+765	\N	f	f	Would prefer to work with member 466192 but not essential.	f	\N	f	f	Chris	f	f	\N	\N	f	\N	\N		f	Ray	\N	\N	f
+767	\N	f	f	hi would like to work with simon crisp. if not possible then at least the same shift pattern. thanks.	f	\N	f	f	marcus	f	f	\N	\N	f	\N	\N		f	jones	\N	\N	f
+768	\N	f	f		f	\N	f	f	becki	f	f	\N	\N	f	\N	\N		f	stringer	\N	\N	f
+769	\N	f	f	would be great to work with laura jones. would need to be the same shifts as laura jones, Simon Crisp and Marcus Jones.	f	\N	f	f	becki	f	f	\N	\N	f	\N	\N		f	stringer	\N	\N	f
+770	\N	f	f		f	\N	f	f	Ian	f	f	\N	\N	f	\N	\N		f	Johnson	\N	\N	f
+771	\N	f	f		f	\N	f	f	Anthony	f	f	\N	\N	f	\N	\N		f	Springall	\N	\N	f
+772	\N	f	f	I won't be able to get there until 11am  & can only work until 21:00	f	\N	f	f	Mark	f	f	\N	\N	f	\N	\N		f	Ostrowski	\N	\N	f
+773	\N	f	f		f	\N	f	f	robert 	f	f	\N	\N	f	\N	\N		f	ellis	\N	\N	f
+774	\N	f	f	Radio log please	f	\N	f	f	Laura	f	f	\N	\N	f	\N	\N		f	Dunn	\N	\N	f
+776	\N	f	f	I will be coming with Andy Johnson who is one of the cider bar managers under Chris Rouse. 	f	\N	f	f	Sandy	f	f	\N	\N	f	\N	\N		f	Osman	\N	\N	f
+777	\N	f	f		f	\N	f	f	Stephen	f	f	\N	\N	f	\N	\N		f	Mcgrath	\N	\N	f
+779	\N	f	f		f	\N	f	f	Paul	f	f	\N	\N	f	\N	\N		f	Gerrard	\N	\N	f
+780	\N	f	f	Deputy bar manager, aka uncle Roy's carer.	f	\N	f	f	Roger	f	f	\N	\N	f	\N	\N	Deputy Beer Bar Manager	f	Brown	\N	\N	f
+781	\N	f	f		f	\N	f	f	Nicholas	f	f	\N	\N	f	\N	\N		f	Wooldridge	\N	\N	f
+782	\N	f	f	I'll be doing the beer judging again this year on Thursday (presume that counts as 'behind the scenes'). Other times I've said to James Moore I'll help him out on membership, seeing as I've run it before!	f	\N	f	f	Quinten	f	f	\N	\N	f	\N	\N		f	Taylor	\N	\N	f
+783	\N	f	f	My wife, Christine Watson, (CAMRA 277294) has already volunteered & will also be working on the bar during my shifts.  Because of the restraining order, could you please ensure we don't come within 1000 metres of each other. &#128514; ( Just kidding. We love working bar together if possible !)	f	\N	f	f	Roger	f	f	\N	\N	f	\N	\N		f	Watson	\N	\N	f
+784	\N	f	f		f	\N	f	f	Ian	f	f	\N	\N	f	\N	\N		f	Read	\N	\N	f
+785	\N	f	f		f	\N	f	f	Teresa	f	f	\N	\N	f	\N	\N		f	Read	\N	\N	f
+786	\N	f	f	I am manager of the games department.	f	\N	f	f	NICK	f	f	\N	\N	f	\N	\N		f	HAMES	\N	\N	f
+787	\N	f	f		f	\N	f	f	ewfd	f	f	\N	\N	f	\N	\N		f	sedvf	\N	\N	f
+788	\N	f	f	I'd like to work in the same area as Rachel Siertsema and Simon Wilson. Thanks.	f	\N	f	f	David	f	f	\N	\N	f	\N	\N		f	Hassell	\N	\N	f
+789	\N	f	f	Please could I work with David Hassell & Simon Wilson, thanks.	f	\N	f	f	Rachel	f	f	\N	\N	f	\N	\N		f	Siertsema	\N	\N	f
+790	\N	f	f	Have completed the CAMRA bar managers course.  \n\\\nWorked as bar manager at Hitchin, Maidenhead and Ascot Festivals.\n\\\nWorked as Foreign beer bar manager at Hitchin - know far too much about Belgian Beers and spent last two summer holidays in Munich and Bamberg - so can now bore about German beer!! 	f	\N	f	f	Paul	f	f	\N	\N	f	\N	\N		f	Beardsley	\N	\N	f
+850	\N	f	f	I'm coming to help Tanya in the kitchen	f	\N	f	f	Jenni	f	f	\N	\N	f	\N	\N		f	Leask	\N	\N	f
+851	\N	f	f	I'm vouched for by Nick Hames	f	\N	f	f	Chip	f	f	\N	\N	f	\N	\N		f	Charlesworth	\N	\N	f
+852	\N	f	f	If I could work in the same area as James Richardson and/or Roger Brown, that would be great.	f	\N	f	f	Martin	f	f	\N	\N	f	\N	\N		f	McCloud	\N	\N	f
+791	\N	f	f	I heard there is a Cider Judging event. I would love to be a judge if that is possible! I am a very keen/quite discerning cider drinker. There are some great ciders made locally to this area so I would enjoy this immensely!\n\\\n\n\\\nI work at JMTC with Edd Bilbe who told me about this event and has volunteered for a few years I believe- it would be nice to work with him but it would be even nicer to be with cider. \n\\\n\n\\\n	f	\N	f	f	Emily	f	f	\N	\N	f	\N	\N		f	Brooke	\N	\N	f
+792	\N	f	f		f	\N	f	f	Neil	f	f	\N	\N	f	\N	\N		f	Rippon	\N	\N	f
+793	\N	f	f		f	\N	f	f	Barry	f	f	\N	\N	f	\N	\N		f	Garber	\N	\N	f
+794	\N	f	f		f	\N	f	f	Stephen	f	f	\N	\N	f	\N	\N		f	Goodall	\N	\N	f
+795	\N	f	f		f	\N	f	f	Tanya	f	f	\N	\N	f	\N	\N		f	Godfrey	\N	\N	f
+796	\N	f	f	Assisting with Beer Judging	f	\N	f	f	Rachael	f	f	\N	\N	f	\N	\N		f	Wall	\N	\N	f
+797	\N	f	f		f	\N	f	f	Tony	f	f	\N	\N	f	\N	\N		f	Dickenson	\N	\N	f
+798	\N	f	f	Would like to work in same area as Janine Shlackman (Member No. 530072).\n\\\n\n\\\nWe are new members and this is our first time volunteering so may need showing the ropes!	f	\N	f	f	Paul	f	f	\N	\N	f	\N	\N		f	Shlackman	\N	\N	f
+799	\N	f	f	Would like to work in same area as Paul Shlackman (Member No. 530071).\n\\\n\n\\\nWe are new members and this is our first time volunteering so may need showing the ropes!	f	\N	f	f	Janine	f	f	\N	\N	f	\N	\N		f	Shlackman	\N	\N	f
+800	\N	f	f		f	\N	f	f	Maurice	f	f	\N	\N	f	\N	\N		f	Quirke	\N	\N	f
+801	\N	f	f	Kennet Morris Men 	f	\N	f	f	Tony	f	f	\N	\N	f	\N	\N		f	Bartlett	\N	\N	f
+802	\N	f	f		f	\N	f	f	PETER	f	f	\N	\N	f	\N	\N		f	FREWIN	\N	\N	f
+803	\N	f	f		f	\N	f	f	Stephen	f	f	\N	\N	f	\N	\N		f	Bates	\N	\N	f
+804	\N	f	f		f	\N	f	f	Jonathan	f	f	\N	\N	f	\N	\N		f	Lacey	\N	\N	f
+868	\N	f	f	Please don't assign me to any areas as I'm already on site team. I'll be on site every day from Sat 22nd Apr  to Tues 2nd May.	f	\N	f	f	Naomi	f	f	\N	\N	f	\N	\N	General Open Manager	f	Withey	\N	\N	f
+870	\N	f	f	Site Team	f	\N	f	f	Gareth	f	f	\N	\N	f	\N	\N		f	Llewellyn	\N	\N	f
+805	\N	f	f	Could I work alongside Martin McCloud please.  We are good friends of Roger Brown, one of the bar managers and we always try to work with Roger.\n\\\nI am also trying to persuade a good friend, previous (good) volunteer, to assist at the same session (his name is Marc Ingram).\n\\\nAlso\n\\\nIf I can, I will try to arrive a little early - but I have to attend a birthday party in Reading Town Hall that afternoon so I cannot promise.  If I can, I will turn up as early a possible and sign in.\n\\\nMany thanks!	f	\N	f	f	Pascal	f	f	\N	\N	f	\N	\N		f	Richardson	\N	\N	f
+807	\N	f	f		f	\N	f	f	Mitchell	f	f	\N	\N	f	\N	\N		f	Walmsley	\N	\N	f
+808	\N	f	f	I know sign language (BSL)	f	\N	f	f	Lee	f	f	\N	\N	f	\N	\N		f	Dalkin	\N	\N	f
+809	\N	f	f		f	\N	f	f	Chris	f	f	\N	\N	f	\N	\N		f	Hale	\N	\N	f
+810	\N	f	f	Please could I work on the same bar as Josh Harrison-Bullock. 	f	\N	f	f	Evelyn	f	f	\N	\N	f	\N	\N		f	Harrison-Bullock	\N	\N	f
+811	\N	f	f		f	\N	f	f	Andrew	f	f	\N	\N	f	\N	\N		f	Whitby	\N	\N	f
+812	\N	f	f		f	\N	f	f	Richard	f	f	\N	\N	f	\N	\N		f	Croton	\N	\N	f
+816	\N	f	f		f	\N	f	f	Timothy	f	f	\N	\N	f	\N	\N		f	Thomas	\N	\N	f
+817	\N	f	f		f	\N	f	f	Felix	f	f	\N	\N	f	\N	\N		f	Iliff	\N	\N	f
+818	\N	f	f	I would like to work in the same area as Felix Iliff if possible please. 	f	\N	f	f	Elspeth	f	f	\N	\N	f	\N	\N		f	Iliff	\N	\N	f
+819	\N	f	f	I would like to work in the same area as Phil Rassell if possible.	f	\N	f	f	Tom	f	f	\N	\N	f	\N	\N		f	Gamble	\N	\N	f
+820	\N	f	f	Apologies, for late entry I have only just found out about a meeting.\n\\\nPlease can I work with Steve Leyfield as usual.\n\\\nI have to go to Birmingham on Saturday for a meeting I will do as much as I can around this.\n\\\nThanks	f	\N	f	f	Angela	f	f	\N	\N	f	\N	\N		f	Aspin	\N	\N	f
+821	\N	f	f	As discussed in the first meeting I have been put forward as Deputy Bar Manager by Tim Lloyd	f	\N	f	f	Luke	f	f	\N	\N	f	\N	\N	Deputy Beer Bar Manager	f	Ambrose	\N	\N	f
+822	\N	f	f	Hi,\n\\\nPrefer the Pre-paid entrance as last year.\n\\\nI prefer my surname not to be displaydd on my badge.\n\\\nLast year we put a small dot to partially cover it, that is also fine as it is easier to mange.\n\\\nReason: Having a unique name in UK, prefer strangers not to Google it!	f	\N	f	f	Parkash	f	f	\N	\N	f	\N	\N		f	Mankoo	\N	\N	f
+823	\N	f	f	### NOTE:  I have a first aid course booked for Monday 24th.  I've never failed one, so put me down as qualified.\n\\\n[Course name:  Emergency first aid at work (previously 'Appointed Persons')]\n\\\n\n\\\nTim Thomas says he's working Thu/Fri afternoon sessions, so if I could be on the same bar, great, if not, no worries.	f	\N	f	f	Steven	f	f	\N	\N	f	\N	\N		f	Kelly	\N	\N	f
+824	\N	f	f	NB I have also been invited to be a Beer judge on the Thursday p.m. \n\\\n\n\\\nI will probably work part sessions of the two I have indicated e.g. 11.30 till 6. 	f	\N	f	f	John 	f	f	\N	\N	f	\N	\N		f	Dearing	\N	\N	f
+825	\N	f	f		f	\N	f	f	Michael	f	f	\N	\N	f	\N	\N		f	Leigh	\N	\N	f
+826	\N	f	f	Working for Brian Jones for Beer Judging only	f	\N	f	f	Judy	f	f	\N	\N	f	\N	\N		f	Jones	\N	\N	f
+827	\N	f	f	Also, may be available for part of the Saturday daytime sessions if required	f	\N	f	f	Allan	f	f	\N	\N	f	\N	\N		f	Conner	\N	\N	f
+828	\N	f	f	I will probably also be able to volunteer on Saturday lunch time if requred.	f	\N	f	f	Melissa	f	f	\N	\N	f	\N	\N		f	Reed	\N	\N	f
+829	\N	f	f		f	\N	f	f	Steve	f	f	\N	\N	f	\N	\N		f	Heming	\N	\N	f
+830	\N	f	f		f	\N	f	f	Tim	f	f	\N	\N	f	\N	\N		f	Ross	\N	\N	f
+831	\N	f	f	Parking required for Van. Will be using small tent. I may be able to work on a little later on Monday, it depends upon what my job requires of me on Tuesday. Previously worked GBBF (Set up/Take down Elec, Volly Arms set up and working, Glasses), NWAF (Derby (Bar) & Norwich (CWBOB Bar Technical)), Great Welsh (Various), W.Dorset October Fest (Org, Set up, all festival jobs, Clear up), plus others.	f	\N	f	f	Jez	f	f	\N	\N	f	\N	\N		f	Armitage	\N	\N	f
+832	\N	f	f	I may be able to help on thursday during tge day but unlikely 	f	\N	f	f	David	f	f	\N	\N	f	\N	\N		f	Marsh	\N	\N	f
+833	\N	f	f		f	\N	f	f	Karen	f	f	\N	\N	f	\N	\N		f	Garber	\N	\N	f
+834	\N	f	f	Work with Chris Robinson - member 324902 (already registered)	f	\N	f	f	Eileen	f	f	\N	\N	f	\N	\N		f	Bartley	\N	\N	f
+835	\N	f	f	I am going to be judging two of the Championship cider & perry rounds which I am informed start at 12:30 ish. I should be available after a short break which should tie in with the 15:00 session start I hope. 	f	\N	f	f	Linda	f	f	\N	\N	f	\N	\N		f	Thompson	\N	\N	f
+836	\N	f	f		f	\N	f	f	Tanya	f	f	\N	\N	f	\N	\N		f	Kynaston	\N	\N	f
+837	\N	f	f	I'd like to work in the same beer bar area as Margaret King 121836	f	\N	f	f	Ian	f	f	\N	\N	f	\N	\N		f	King	\N	\N	f
+838	\N	f	f	I would like to work with my dad Richard Hand who is doing the 3pm-8pm session 	f	\N	f	f	Daniel	f	f	\N	\N	f	\N	\N		f	Hand	\N	\N	f
+839	\N	f	f	Hi. I have lost my card and don't know my membership number. I have put Nick as a contact but he doesn't know me except via email a few times last year. 	f	\N	f	f	Matthew	f	f	\N	\N	f	\N	\N		f	Shewring	\N	\N	f
+840	\N	f	f		f	\N	f	f	Dean	f	f	\N	\N	f	\N	\N		f	Cornwall	\N	\N	f
+841	\N	f	f	Required by John & Sue Thirlaway to assist with Foreign Beer Deliveries on Tues PM of Setup.	f	\N	f	f	Simon	f	f	\N	\N	f	\N	\N		f	Grist	\N	\N	f
+842	\N	f	f		f	\N	f	f	Rodney	f	f	\N	\N	f	\N	\N		f	Sprigg	\N	\N	f
+843	\N	f	f		f	\N	f	f	Rodney	f	f	\N	\N	f	\N	\N	Beer Bar Manager	f	Sprigg	\N	\N	f
+844	\N	f	f		f	\N	f	f	Sophie	f	f	\N	\N	f	\N	\N		f	Neal	\N	\N	f
+845	\N	f	f		f	\N	f	f	Nathan	f	f	\N	\N	f	\N	\N		f	Heywood	\N	\N	f
+846	\N	f	f		f	\N	f	f	Connor	f	f	\N	\N	f	\N	\N		f	Froude	\N	\N	f
+847	\N	f	f	Ewan Tolladay is the person whom put me onto volunteering for the beer festival and i'd really love to help out :) 	f	\N	f	f	Robert Mathue James Phillip	f	f	\N	\N	f	\N	\N		f	Hart	\N	\N	f
+848	\N	f	f		f	\N	f	f	Timothy	f	f	\N	\N	f	\N	\N		f	Harden	\N	\N	f
+849	\N	f	f		f	\N	f	f	Angela	f	f	\N	\N	f	\N	\N		f	Jones	\N	\N	f
+668	\N	f	f		f	\N	f	f	Sue	f	f	\N	\N	f	\N	\N	Foreign Bar Manager	f	Thirlaway	\N	\N	f
+677	\N	f	f		f	\N	f	f	A	f	f	\N	\N	f	\N	\N		f	A	\N	\N	f
+151	\N	f	f		f	\N	f	f	Flash	f	f	\N	\N	f	\N	\N		f	Gordon	\N	\N	f
+501	\N	f	f		f	\N	f	f	Nick	f	f	\N	\N	f	\N	\N	Staffing Manager	f	Jerram	\N	\N	f
+502	\N	f	f		f	\N	f	f	Joy	f	f	\N	\N	f	\N	\N	Administration	f	Jerram	\N	\N	f
+503	\N	f	f	Festival publicity.	f	\N	f	f	Mark	f	f	\N	\N	f	\N	\N	Publicity Manager	f	Johnston	\N	\N	f
+504	\N	f	f	Site Team\n\\\n	f	\N	f	f	Katrina	f	f	\N	\N	f	\N	\N	Setup Coordinator	f	Fletcher	\N	\N	f
+505	\N	f	f	Please dont allocate me a specific tak for any of the sessions. I will be ther most of the time as Organiser and DPS	f	\N	f	f	David	f	f	\N	\N	f	\N	\N	Festival Organizer	f	Scott	\N	\N	f
+506	\N	f	f		f	\N	f	f	Martin	f	f	\N	\N	f	\N	\N	Deputy Administration	f	Harbor	\N	\N	f
+507	\N	f	f	As site manager this year I have put extra effort into roping people to volunteer. Anyone who can spell my name is probably kosher but will confirm via email.	f	\N	f	f	Edward	f	f	\N	\N	f	\N	\N	Site Manager	f	Bilbe	\N	\N	f
+511	\N	f	f		f	\N	f	f	Andrew	f	f	\N	\N	f	\N	\N		f	Turner	\N	\N	f
+671	\N	f	f		f	\N	f	f	Brian	f	f	\N	\N	f	\N	\N	Beer Judging Organizer	f	Jones	\N	\N	f
+592	\N	f	f	Have worked the Foreign bier bar for many years but don't mind working on the normal bars if short.\n\\\n\n\\\nCheers. David Newman.	f	\N	f	f	David	f	f	\N	\N	f	\N	\N		f	Newman	\N	\N	f
+806	\N	f	f		f	\N	f	f	Tim	f	f	\N	\N	f	\N	\N		f	Andrews	\N	\N	f
+508	\N	f	f	I am part of the site team. We are still to work out how coverage will work while the festival is open. Please check with me before assigning me outside of site team. -Ryan	f	\N	f	f	Ryan	f	f	\N	\N	f	\N	\N		f	Shook	\N	\N	f
+509	\N	f	f	If I'm on entrance then could a stall be provided as I have difficulty standing for long periods I have a folding chair if I'm on a stall if not possible please let me know and I'll try to sort something out	f	\N	f	f	Ross	f	f	\N	\N	f	\N	\N		f	Chester	\N	\N	f
+510	\N	f	f		f	\N	f	f	Nick	f	f	\N	\N	f	\N	\N	Chief Steward	f	O`Reilly	\N	\N	f
+512	\N	f	f	I will have a couple of half days off at some point during the above, tba depending on what's happening on site and other people's availabilities	f	\N	f	f	Pat	f	f	\N	\N	f	\N	\N	Deputy Organizer	f	Rapley	\N	\N	f
+513	\N	f	f		f	\N	f	f	Test	f	f	\N	\N	f	\N	\N		f	Test	\N	\N	f
+551	\N	f	f	I shall be working on Friday 28th 11.30 - 7.00pm.  On Beer Bar.\n\\\nMany Thanks\n\\\nTony	f	\N	f	f	Tony	f	f	\N	\N	f	\N	\N		f	Crawley	\N	\N	f
+552	\N	f	f	My principal job is supervising the cider judging (Fri up to at least 7pm, Sat up to 3pm), may be able to do some serving on cider bar. I need car parking (not camping) from Thursday pm until Sunday am.	f	\N	f	f	Chris	f	f	\N	\N	f	\N	\N		f	Rogers	\N	\N	f
+553	\N	f	f		f	\N	f	f	Paul	f	f	\N	\N	f	\N	\N		f	Rayner	\N	\N	f
+554	\N	f	f	I have over 4 years bar work experience and specialized in Ciders. 	f	\N	f	f	Dean	f	f	\N	\N	f	\N	\N		f	Noakes	\N	\N	f
+555	\N	f	f	Might be a little late some mornings.	f	\N	f	f	Dickon	f	f	\N	\N	f	\N	\N	Deputy Beer Bar Manager	f	Hood	\N	\N	f
+556	\N	f	f	Have previously volunteered the last few years	f	\N	f	f	Ashish	f	f	\N	\N	f	\N	\N		f	Naik	\N	\N	f
+558	\N	f	f		f	\N	f	f	Danielle	f	f	\N	\N	f	\N	\N		f	Miller	\N	\N	f
+595	\N	f	f		f	\N	f	f	Mario	f	f	\N	\N	f	\N	\N		f	Mendolicchio	\N	\N	f
+670	\N	f	f	I would please like to work in the beer bar with my father Mark Billing.	f	\N	f	f	Oliver	f	f	\N	\N	f	\N	\N		f	Billing	\N	\N	f
+686	\N	f	f	I can work until 1700 on Friday 28th	f	\N	f	f	Nick	f	f	\N	\N	f	\N	\N		f	Swift	\N	\N	f
+687	\N	f	f		f	\N	f	f	Graham	f	f	\N	\N	f	\N	\N		f	May	\N	\N	f
+557	\N	f	f	Request to work with Mike Garner #242522	f	\N	f	f	Will	f	f	\N	\N	f	\N	\N		f	Burchell	\N	\N	f
+559	\N	f	f		f	\N	f	f	Katherine	f	f	\N	\N	f	\N	\N		f	Lilley	\N	\N	f
+560	\N	f	f		f	\N	f	f	Tim	f	f	\N	\N	f	\N	\N		f	Winter	\N	\N	f
+561	\N	f	f	Night Team Manager (Please can my T-shirt reflect this)\n\\\n\n\\\nWill be on site Friday 21st.   Depending on what time I finish work on Friday 21st I will arrive sometime during the evening. \n\\\n\n\\\nDepart Sunday 30th am as I return to work on Monday 1st May\n\\\n\n\\\nCheck in to accommodation Saturday 22nd. Check out of accommodation Sunday 30th am after breakfast 	f	\N	f	f	Richard	f	f	\N	\N	f	\N	\N		f	Shervington	\N	\N	f
+562	\N	f	f	I will be helping with the beer judging on Thursday, as on previous years, working with more fellow-Kennet Morris Men..	f	\N	f	f	Nic	f	f	\N	\N	f	\N	\N		f	Yannacopoulos	\N	\N	f
+563	\N	f	f		f	\N	f	f	Brian	f	f	\N	\N	f	\N	\N		f	Oxnard	\N	\N	f
+564	\N	f	f		f	\N	f	f	David	f	f	\N	\N	f	\N	\N		f	West	\N	\N	f
+565	\N	f	f		f	\N	f	f	Patrick	f	f	\N	\N	f	\N	\N		f	Nolan	\N	\N	f
+566	\N	f	f		f	\N	f	f	Peter	f	f	\N	\N	f	\N	\N		f	Weekes	\N	\N	f
+568	\N	f	f		f	\N	f	f	Philip	f	f	\N	\N	f	\N	\N		f	Chappell	\N	\N	f
+569	\N	f	f		f	\N	f	f	Lydia	f	f	\N	\N	f	\N	\N		f	Charles	\N	\N	f
+570	\N	f	f	Friends: James Elsmore, Tim Freeman, Douglas McDougall	f	\N	f	f	Nicholas	f	f	\N	\N	f	\N	\N		f	Mackerness	\N	\N	f
+571	\N	f	f		f	\N	f	f	Jo	f	f	\N	\N	f	\N	\N		f	Nicolson	\N	\N	f
+572	\N	f	f		f	\N	f	f	Stephanie	f	f	\N	\N	f	\N	\N		f	Henderson	\N	\N	f
+573	\N	f	f		f	\N	f	f	Michael	f	f	\N	\N	f	\N	\N		f	Brady	\N	\N	f
+575	\N	f	f		f	\N	f	f	David	f	f	\N	\N	f	\N	\N		f	Price	\N	\N	f
+576	\N	f	f	Prefer to work Cider Bar, but can be flexible if really needed else where	f	\N	f	f	Brendan	f	f	\N	\N	f	\N	\N		f	Sothcott	\N	\N	f
+747	\N	f	f		f	\N	f	f	John	f	f	\N	\N	f	\N	\N		f	Buckley	\N	\N	f
+688	\N	f	f	Prefer bar on Saturday and Entrance Sunday	f	\N	f	f	Mike	f	f	\N	\N	f	\N	\N		f	Smith	\N	\N	f
+689	\N	f	f	Deputy Games Manager (shared with Jennie Farley)	f	\N	f	f	Madeleine	f	f	\N	\N	f	\N	\N	Deputy Games Manager	f	Markey	\N	\N	f
+690	\N	f	f		f	\N	f	f	Camilla	f	f	\N	\N	f	\N	\N		f	Ford	\N	\N	f
+691	\N	f	f	I would like to work in the same area as my husband, Ian King ( 121835) who has requested the same time beer bar slots as me.	f	\N	f	f	Margaret	f	f	\N	\N	f	\N	\N		f	King	\N	\N	f
+692	\N	f	f	Can I work together with Alex HARKNESS Please. Thank You Reading Camra.	f	\N	f	f	Steve	f	f	\N	\N	f	\N	\N		f	LAWRENCE	\N	\N	f
+683	\N	f	f		f	\N	f	f	Ben	f	f	\N	\N	f	\N	\N		f	Hart	\N	\N	f
+766	\N	f	f	I am disabled, so may require sit down quick breaks throughout the session	f	\N	f	f	Jo	f	f	\N	\N	f	\N	\N		f	Toovey	\N	\N	f
+693	\N	f	f	On Monday afternoon I intend to work until ~3pm, although if I am still full of energy I may continue until 5pm hauling casks. 	f	\N	f	f	Nicholas	f	f	\N	\N	f	\N	\N		f	Mayes	\N	\N	f
+694	\N	f	f		f	\N	f	f	Doug	f	f	\N	\N	f	\N	\N		f	McDougall	\N	\N	f
+695	\N	f	f	I have injured my back over the weekend so will not be able to volunteer tomorrow.  I am still hopeful for Thursday but it will have to be light duties.\n\\\n\n\\\nColin	f	\N	f	f	Colin	f	f	\N	\N	f	\N	\N		f	Palmer	\N	\N	f
+696	\N	f	f		f	\N	f	f	Mark	f	f	\N	\N	f	\N	\N		f	Gravenor	\N	\N	f
+697	\N	f	f	Would like to work with my son Daniel Hand who will sign up for same sessions and roles.	f	\N	f	f	Richard	f	f	\N	\N	f	\N	\N		f	Hand	\N	\N	f
+698	\N	f	f	Setup: I've told Martin Hoare I'll help him to get the PA wiring up.  I haven't ticked any sessions for that because it never goes to schedule!\n\\\nOpen: I can't stand up all day because of back pain.  I'll last longer and get more done if you can mix a sit-down job with the bar work.  Thanks.	f	\N	f	f	Sue	f	f	\N	\N	f	\N	\N		f	White	\N	\N	f
+699	\N	f	f	I am Qualified First Aid at work.	f	\N	f	f	Thomas	f	f	\N	\N	f	\N	\N		f	Ruane	\N	\N	f
+700	\N	f	f		f	\N	f	f	Karen	f	f	\N	\N	f	\N	\N		f	Pratt	\N	\N	f
+701	\N	f	f		f	\N	f	f	James	f	f	\N	\N	f	\N	\N		f	Elsmore	\N	\N	f
+702	\N	f	f	I would like to work alongside my friends, Ashish Naik and Richard Silley if possible please	f	\N	f	f	Ralph	f	f	\N	\N	f	\N	\N		f	McFadyen	\N	\N	f
+703	\N	f	f	Would like to work with Natalie New if possible. Member 514340	f	\N	f	f	Jonbob	f	f	\N	\N	f	\N	\N		f	New	\N	\N	f
+704	\N	f	f	Please could I work the same time and around the same area with Jonbob New, it doesn't have to be alongside him. 	f	\N	f	f	Natalie	f	f	\N	\N	f	\N	\N		f	New	\N	\N	f
+705	\N	f	f		f	\N	f	f	Darren	f	f	\N	\N	f	\N	\N		f	Stock	\N	\N	f
+706	\N	f	f	Cider bar manager and yes please i'd like a shirt.	f	\N	f	f	Ewan	f	f	\N	\N	f	\N	\N	Cider Bar Manager	f	Tolladay	\N	\N	f
+707	\N	f	f		f	\N	f	f	Jo	f	f	\N	\N	f	\N	\N		f	Metcalf	\N	\N	f
+708	\N	f	f		f	\N	f	f	Mark	f	f	\N	\N	f	\N	\N		f	Treder	\N	\N	f
+709	\N	f	f		f	\N	f	f	Kevin	f	f	\N	\N	f	\N	\N		f	Brady	\N	\N	f
+710	\N	f	f		f	\N	f	f	Reshma	f	f	\N	\N	f	\N	\N		f	Thakkar	\N	\N	f
+711	\N	f	f		f	\N	f	f	John	f	f	\N	\N	f	\N	\N		f	Abramson	\N	\N	f
+712	\N	f	f	Hi there! Ideally I'd like to help with games, as I know a couple of the team already (Andrew Waterfall and Tes Matthews) and it suits my personality down to the ground!	f	\N	f	f	Mark	f	f	\N	\N	f	\N	\N		f	Haigh	\N	\N	f
+639	\N	f	f		f	\N	f	f	John	f	f	\N	\N	f	\N	\N		f	Breakwell	\N	\N	f
+739	\N	f	f		f	\N	f	f	Tim	f	f	\N	\N	f	\N	\N		f	Gough	\N	\N	f
+713	\N	f	f	member of kennet morris men will be in kit pm\n\\\nagreed to help Brian Jones Thursday afternoon with beer judging	f	\N	f	f	Clive	f	f	\N	\N	f	\N	\N		f	Allen	\N	\N	f
+714	\N	f	f		f	\N	f	f	john	f	f	\N	\N	f	\N	\N		f	brown	\N	\N	f
+715	\N	f	f		f	\N	f	f	Kate	f	f	\N	\N	f	\N	\N		f	Martin	\N	\N	f
+716	\N	f	f		f	\N	f	f	Darren	f	f	\N	\N	f	\N	\N		f	Streat	\N	\N	f
+717	\N	f	f		f	\N	f	f	Linda	f	f	\N	\N	f	\N	\N		f	Thompson	\N	\N	f
+718	\N	f	f	Suffer with fibromyalgia so may not be able to work full shifts but will do my best to do so.	f	\N	f	f	Gavin	f	f	\N	\N	f	\N	\N		f	Jenkins	\N	\N	f
+719	\N	f	f	I am helping to run the cider competition so will not be behind the bar while this is running	f	\N	f	f	Mike	f	f	\N	\N	f	\N	\N		f	Gilroy	\N	\N	f
+720	\N	f	f		f	\N	f	f	Simon	f	f	\N	\N	f	\N	\N		f	Andrews	\N	\N	f
+721	\N	f	f		f	\N	f	f	Jonathan	f	f	\N	\N	f	\N	\N		f	Meek	\N	\N	f
+722	\N	f	f	My friend are SUPPOSED to be comming Saturday; but what normally happens is that they don't turn up and I'm spare to work on Saturday as well - i know you are always short.\n\\\nI don't mind doing ONE shift on the cider bar, but i can't handle any more.	f	\N	f	f	Adrian	f	f	\N	\N	f	\N	\N		f	Samler	\N	\N	f
+723	\N	f	f	I will be available on Wednesday evening to set up the CAMERA Sales and can pop in between 9.00 and 10.30 to help with set-up catering. I have a food hygiene certificate and will happily fill baguettes.	f	\N	f	f	Tina	f	f	\N	\N	f	\N	\N		f	Bilbe	\N	\N	f
+859	\N	f	f	I have spoken with Chris Rouse about helping out with cider comp starting about 12:30pm on Friday and Saturday afternoons, he told me to sign up as staff. I will also be available to work on the cider bar after the competition finishes on friday and before it starts on the saturday. Cheers	f	\N	f	f	ALISTAIR	f	f	\N	\N	f	\N	\N		f	SMITH	\N	\N	f
+863	\N	f	f	If he's working the bar too, I'd like Ricky Moysey to be put with me.	f	\N	f	f	Jamie	f	f	\N	\N	f	\N	\N	Beer Orderer	f	Duffield	\N	\N	f
+864	\N	f	f		f	\N	f	f	ross	f	f	\N	\N	f	\N	\N		f	Chester	\N	\N	f
+865	\N	f	f		f	\N	f	f	Bart	f	f	\N	\N	f	\N	\N		f	Weeks	\N	\N	f
+866	\N	f	f		f	\N	f	f	Ricky	f	f	\N	\N	f	\N	\N	Beer Orderer	f	Moysey	\N	\N	f
+867	\N	f	f		f	\N	f	f	Liam	f	f	\N	\N	f	\N	\N		f	Kavanagh	\N	\N	f
+871	\N	f	f	Site Team.	f	\N	f	f	Bret	f	f	\N	\N	f	\N	\N		f	Colloff	\N	\N	f
+872	\N	f	f		f	\N	f	f	Peter	f	f	\N	\N	f	\N	\N		f	Gibbins	\N	\N	f
+873	\N	f	f	PA system and Thursday PA for events such as Paul Sinha Quiz.\n\\\n	f	\N	f	f	Martin	f	f	\N	\N	f	\N	\N		f	Hoare	\N	\N	f
+874	\N	f	f	Teddy bear shirt size	f	\N	f	f	Doris	f	f	\N	\N	f	\N	\N	Chief Executive Officer	f	Panda	\N	\N	f
+875	\N	f	f		f	\N	f	f	Laura	f	f	\N	\N	f	\N	\N		f	Meegan	\N	\N	f
+876	\N	f	f		f	\N	f	f	SIMON	f	f	\N	\N	f	\N	\N		f	NUTTALL	\N	\N	f
+877	\N	f	f		f	\N	f	f	Michael	f	f	\N	\N	f	\N	\N		f	Hammer	\N	\N	f
+878	\N	f	f		f	\N	f	f	Anthony	f	f	\N	\N	f	\N	\N		f	Saunders	\N	\N	f
+879	\N	f	f		f	\N	f	f	Adam	f	f	\N	\N	f	\N	\N		f	Miller	\N	\N	f
+880	\N	f	f	I could actually work further sessions if needed. \n\\\nI doubt if this would help but I am a French speaking Belgian.\n\\\nI'm 70 but fit.\n\\\nLooking forward to the festival.	f	\N	f	f	James	f	f	\N	\N	f	\N	\N		f	Murphy	\N	\N	f
+883	\N	f	f	Helping Tim Loyd as part of cellar management 	f	\N	f	f	Kevin	f	f	\N	\N	f	\N	\N		f	Black	\N	\N	f
+885	\N	f	f		f	\N	f	f	Mark	f	f	\N	\N	f	\N	\N		f	Rickson 	\N	\N	f
+886	\N	f	f		f	\N	f	f	Paul	f	f	\N	\N	f	\N	\N		f	Anderson	\N	\N	f
+887	\N	f	f		f	\N	f	f	James	f	f	\N	\N	f	\N	\N		f	Marshall	\N	\N	f
+888	\N	f	f		f	\N	f	f	Geoff	f	f	\N	\N	f	\N	\N		f	Keen	\N	\N	f
+889	\N	f	f		f	\N	f	f	Eric	f	f	\N	\N	f	\N	\N		f	Warner	\N	\N	f
+890	\N	f	f		f	\N	f	f	Laura	f	f	\N	\N	f	\N	\N		f	Meegan	\N	\N	f
+891	\N	f	f		f	\N	f	f	John	f	f	\N	\N	f	\N	\N		f	Sims	\N	\N	f
+892	\N	f	f		f	\N	f	f	Graham	f	f	\N	\N	f	\N	\N		f	Bishop	\N	\N	f
+893	\N	f	f		f	\N	f	f	Matthew	f	f	\N	\N	f	\N	\N		f	Debney	\N	\N	f
+1851	\N	f	f	\N	f	a@a	f	f	a@a	f	f	\N	\N	f	\N	\N	\N	f	a@a	\N	9ecf7f10-a883-4d55-987b-ba9102b67788	f
+1	\N	f	f	\N	f		f	f		f	f	\N		f	\N	\N	\N	f		\N	\N	f
+2	\N	f	f	\N	f		f	f		f	f	\N		f	\N	\N	\N	f		\N	\N	f
+1901	\N	f	f		f	nick.jerram@gmail.com	t	f	Nick	f	t		66535	f	\N	\N	\N	f	Jerram	\N	a537265b-fc03-43eb-8a74-8673ea479e70	f
 \.
 
 
@@ -7248,6 +7328,29 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 99	887	1
 99	888	1
 99	889	1
+0	1751	1
+-1	1751	1
+4	1751	2
+1	1751	2
+2	1751	2
+3	1751	2
+9	1751	1
+10	1751	2
+0	1801	1
+-1	1801	1
+-1	1851	1
+0	1851	1
+0	1901	1
+-1	1901	1
+4	1901	1
+3	1901	1
+14	1901	2
+2	1901	1
+8	1901	2
+1	1901	1
+14	1751	2
+-1	1951	1
+0	1951	1
 \.
 
 
@@ -7646,7 +7749,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	30	696	14
 \N	\N	f	\N	0	f	30	706	8
 \N	\N	f	\N	0	f	30	707	38
-\N	\N	f	\N	0	f	30	711	38
 \N	\N	f	\N	0	f	30	725	38
 \N	\N	f	\N	0	f	30	736	28
 \N	\N	f	\N	0	f	30	750	38
@@ -8114,7 +8216,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	40	587	15
 \N	\N	f	\N	0	f	40	588	19
 \N	\N	f	\N	0	f	40	589	19
-\N	\N	f	\N	0	f	40	590	15
 \N	\N	f	\N	0	f	40	593	1
 \N	\N	f	\N	0	f	40	596	11
 \N	\N	f	\N	0	f	40	598	3
@@ -8329,7 +8430,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	41	709	1
 \N	\N	f	\N	0	f	41	710	10
 \N	\N	f	\N	0	f	41	718	14
-\N	\N	f	\N	0	f	41	720	14
 \N	\N	f	\N	0	f	41	724	8
 \N	\N	f	\N	0	f	41	728	15
 \N	\N	f	\N	0	f	41	729	25
@@ -9578,11 +9678,27 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	81	844	38
 \N	\N	f	\N	0	f	81	870	30
 \N	\N	f	\N	0	f	81	878	30
+	\N	f	\N	0	f	41	720	13
+	\N	f	\N	0	f	51	1751	2
+	\N	f	\N	0	f	60	1751	4
+	\N	f	\N	0	f	50	1751	10
+\N	\N	f	\N	0	f	61	1751	-1
+\N	\N	f	\N	0	f	52	1751	-1
+	\N	f	\N	0	f	30	711	10
+	\N	f	\N	0	f	40	590	14
 \.
 
 
 --
--- Name: area_session_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing; Tablespace: 
+-- Name: admin_login admin_login_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing
+--
+
+ALTER TABLE ONLY public.admin_login
+    ADD CONSTRAINT admin_login_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: area_session area_session_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.area_session
@@ -9590,7 +9706,7 @@ ALTER TABLE ONLY public.area_session
 
 
 --
--- Name: assignable_area_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing; Tablespace: 
+-- Name: assignable_area assignable_area_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.assignable_area
@@ -9598,7 +9714,7 @@ ALTER TABLE ONLY public.assignable_area
 
 
 --
--- Name: form_area_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing; Tablespace: 
+-- Name: form_area form_area_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.form_area
@@ -9606,7 +9722,7 @@ ALTER TABLE ONLY public.form_area
 
 
 --
--- Name: sequence_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing; Tablespace: 
+-- Name: sequence sequence_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.sequence
@@ -9614,7 +9730,7 @@ ALTER TABLE ONLY public.sequence
 
 
 --
--- Name: session_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing; Tablespace: 
+-- Name: session session_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.session
@@ -9622,7 +9738,7 @@ ALTER TABLE ONLY public.session
 
 
 --
--- Name: volunteer_area_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing; Tablespace: 
+-- Name: volunteer_area volunteer_area_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.volunteer_area
@@ -9630,7 +9746,7 @@ ALTER TABLE ONLY public.volunteer_area
 
 
 --
--- Name: volunteer_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing; Tablespace: 
+-- Name: volunteer volunteer_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.volunteer
@@ -9638,7 +9754,7 @@ ALTER TABLE ONLY public.volunteer
 
 
 --
--- Name: volunteer_session_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing; Tablespace: 
+-- Name: volunteer_session volunteer_session_pkey; Type: CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.volunteer_session
@@ -9646,7 +9762,7 @@ ALTER TABLE ONLY public.volunteer_session
 
 
 --
--- Name: assigned_counts _RETURN; Type: RULE; Schema: public; Owner: nick
+-- Name: assigned_counts _RETURN; Type: RULE; Schema: public; Owner: staffing
 --
 
 CREATE RULE "_RETURN" AS
@@ -9661,7 +9777,7 @@ CREATE RULE "_RETURN" AS
 
 
 --
--- Name: fk_area_session_areaid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
+-- Name: area_session fk_area_session_areaid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.area_session
@@ -9669,7 +9785,7 @@ ALTER TABLE ONLY public.area_session
 
 
 --
--- Name: fk_area_session_sessionid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
+-- Name: area_session fk_area_session_sessionid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.area_session
@@ -9677,7 +9793,7 @@ ALTER TABLE ONLY public.area_session
 
 
 --
--- Name: fk_assignable_area_formarea_id; Type: FK CONSTRAINT; Schema: public; Owner: staffing
+-- Name: assignable_area fk_assignable_area_formarea_id; Type: FK CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.assignable_area
@@ -9685,7 +9801,7 @@ ALTER TABLE ONLY public.assignable_area
 
 
 --
--- Name: fk_volunteer_area_areaid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
+-- Name: volunteer_area fk_volunteer_area_areaid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.volunteer_area
@@ -9693,7 +9809,7 @@ ALTER TABLE ONLY public.volunteer_area
 
 
 --
--- Name: fk_volunteer_area_volunteerid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
+-- Name: volunteer_area fk_volunteer_area_volunteerid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.volunteer_area
@@ -9701,7 +9817,7 @@ ALTER TABLE ONLY public.volunteer_area
 
 
 --
--- Name: fk_volunteer_session_areaid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
+-- Name: volunteer_session fk_volunteer_session_areaid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.volunteer_session
@@ -9709,7 +9825,7 @@ ALTER TABLE ONLY public.volunteer_session
 
 
 --
--- Name: fk_volunteer_session_sessionid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
+-- Name: volunteer_session fk_volunteer_session_sessionid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.volunteer_session
@@ -9717,21 +9833,11 @@ ALTER TABLE ONLY public.volunteer_session
 
 
 --
--- Name: fk_volunteer_session_volunteerid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
+-- Name: volunteer_session fk_volunteer_session_volunteerid; Type: FK CONSTRAINT; Schema: public; Owner: staffing
 --
 
 ALTER TABLE ONLY public.volunteer_session
     ADD CONSTRAINT fk_volunteer_session_volunteerid FOREIGN KEY (volunteerid) REFERENCES public.volunteer(id);
-
-
---
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
---
-
-REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM postgres;
-GRANT ALL ON SCHEMA public TO postgres;
-GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
 --
