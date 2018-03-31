@@ -22,7 +22,7 @@ import lombok.Setter;
 @IdClass(VolunteerArea.ID.class)
 @Cacheable(false)
 @EqualsAndHashCode(callSuper=false, of={"volunteerId","areaId"})
-public class VolunteerArea extends StaffingEntity<VolunteerArea.ID> {
+public class VolunteerArea {
 
 	public VolunteerArea() {}
 	

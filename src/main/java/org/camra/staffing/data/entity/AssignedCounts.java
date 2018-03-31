@@ -9,7 +9,7 @@ import java.io.Serializable;
 @Entity
 @Cacheable(false)
 @Table(name="assigned_counts")
-public class AssignedCounts extends StaffingEntity<AssignedCounts.ID> {
+public class AssignedCounts {
 
 	@EmbeddedId @Getter ID id;
 	@Getter private int required;

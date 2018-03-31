@@ -1,8 +1,6 @@
 package org.camra.staffing.data.service;
 
 import com.vaadin.data.provider.Query;
-import com.vaadin.data.provider.QuerySortOrder;
-import com.vaadin.shared.data.sort.SortDirection;
 import org.camra.staffing.data.dto.*;
 import org.camra.staffing.data.entity.*;
 import org.camra.staffing.data.entityviews.AssignmentSelectorView;
@@ -11,19 +9,15 @@ import org.camra.staffing.data.repository.*;
 import org.camra.staffing.util.CamraMember;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
-import org.springframework.data.domain.Sort.Order;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
 
 @Service
-public class VolunteerService {
+public class VolunteerService extends AbstractExampleService<VolunteerDTO, Volunteer> {
 
     @Autowired private VolunteerRepository volunteerRepository;
     @Autowired private AreaSelectorRepository areaSelectorRepository;
@@ -33,7 +27,7 @@ public class VolunteerService {
     @Autowired private VolunteerSessionRepository volunteerSessionRepository;
     @Autowired private PossibleSessionRepository possibleSessionRepository;
 
-    public List<VolunteerDTO> getVolunteers(Query<VolunteerDTO,Example<Volunteer>> query) {
+    public List<VolunteerDTO> getRecords(Query<VolunteerDTO,Example<Volunteer>> query) {
         Page<Volunteer> queryResult;
         if (query.getFilter().isPresent()) {
             queryResult = volunteerRepository.findAll(query.getFilter().get(), pageRequest(query, "surname"));
@@ -52,7 +46,7 @@ public class VolunteerService {
                 .map(VolunteerDTO::create);
     }
 
-    public int countVolunteers(Query<VolunteerDTO,Example<Volunteer>> query) {
+    public int countRecords(Query<VolunteerDTO,Example<Volunteer>> query) {
         if (query.getFilter().isPresent()) {
             return (int) volunteerRepository.count(query.getFilter().get());
         } else {
@@ -127,29 +121,6 @@ public class VolunteerService {
             v.addSession(s, assignableAreaRepository.getUnassigned());
         }
         volunteerRepository.saveAndFlush(v);
-    }
-
-
-    /**
-     * Convert the Sorting and Paging components of a Vaadin Query into a Spring JPA PageRequest
-     */
-    private Pageable pageRequest(Query<?, ?> query, String defaultSort) {
-        List<Order> springSorts = new ArrayList<>();
-        for (QuerySortOrder sortOrder : query.getSortOrders()) {
-            springSorts.add(new Order(direction(sortOrder.getDirection()), sortOrder.getSorted()));
-        }
-        if (springSorts.isEmpty()) {
-            springSorts.add(new Order(Direction.ASC, defaultSort));
-        }
-        Sort finalSort = new Sort(springSorts);
-
-        int pageNumber = query.getOffset() / query.getLimit();
-        return
-                new PageRequest(pageNumber, query.getLimit(), finalSort);
-    }
-
-    private Direction direction(SortDirection sortDirection) {
-        return sortDirection==SortDirection.ASCENDING ? Direction.ASC : Direction.DESC;
     }
 
     private class VolunteerAreaAssigner {

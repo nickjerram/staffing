@@ -3,8 +3,6 @@ package org.camra.staffing.data.entity;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.camra.staffing.data.entity.StaffingEntity;
-import org.camra.staffing.data.entity.VolunteerSession;
 
 import javax.persistence.*;
 import java.util.*;
@@ -13,7 +11,7 @@ import java.util.*;
 @Table(name="volunteer")
 @Cacheable(false)
 @EqualsAndHashCode(callSuper=false, of={"id"})
-public class Volunteer extends StaffingEntity<Integer> {
+public class Volunteer {
 
 	@Id @Getter @GeneratedValue(strategy = GenerationType.AUTO) private Integer id;
 	

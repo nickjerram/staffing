@@ -11,7 +11,7 @@ import java.util.List;
 @Entity
 @Table(name="session")
 @EqualsAndHashCode(callSuper=false, of={"id"})
-public class Session extends StaffingEntity<Integer> {
+public class Session {
 
 	public Session() {}
 	

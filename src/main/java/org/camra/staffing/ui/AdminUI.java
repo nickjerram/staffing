@@ -11,6 +11,7 @@ import com.vaadin.ui.Notification;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.themes.ValoTheme;
 import org.camra.staffing.data.entity.AdminUser;
+import org.camra.staffing.widgets.admin.views.MainAssignmentView;
 import org.camra.staffing.widgets.layouts.WelcomeLayoutLogic;
 import org.camra.staffing.widgets.admin.layouts.ScreenLayoutLogic;
 import org.camra.staffing.widgets.admin.layouts.MenuLayoutLogic;
@@ -33,6 +34,7 @@ public class AdminUI extends UI implements ViewChangeListener {
     @Value("${admin.message}") private String adminMessage;
     @Autowired private ScreenLayoutLogic mainLayout;
     @Autowired private VolunteerView volunteerView;
+    @Autowired private MainAssignmentView mainAssignmentView;
     @Lazy @Autowired private MenuLayoutLogic menu;
     @Lazy @Autowired private AdminLoginLayoutLogic adminLogin;
     @Autowired private Environment environment;
@@ -62,6 +64,7 @@ public class AdminUI extends UI implements ViewChangeListener {
         new Navigator(this, mainLayout.getViewContainer());
         addStyleName(ValoTheme.UI_WITH_MENU);
         menu.addVolunteerMenuItem(VaadinIcons.GROUP, volunteerView, true);
+        menu.addVolunteerMenuItem(VaadinIcons.CALENDAR_USER, mainAssignmentView, false);
         menu.addSessionMenuItem(VaadinIcons.CALENDAR_CLOCK, new SessionView());
         mainLayout.getMenuContainer().addComponent(menu);
         setContent(mainLayout);

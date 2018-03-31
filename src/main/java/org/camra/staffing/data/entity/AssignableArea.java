@@ -8,7 +8,7 @@ import javax.persistence.*;
 @Entity
 @Table(name="assignable_area")
 @EqualsAndHashCode(callSuper=false, of={"id"})
-public class AssignableArea extends StaffingEntity<Integer> {
+public class AssignableArea {
 
 	public static final int UNASSIGNED = -1;
     public static final int NOT_NEEDED = 0;

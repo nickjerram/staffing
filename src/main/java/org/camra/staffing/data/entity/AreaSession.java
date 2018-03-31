@@ -11,7 +11,7 @@ import java.io.Serializable;
 @Entity
 @Table(name="area_session")
 @EqualsAndHashCode(callSuper=false, of={"id"})
-public class AreaSession extends StaffingEntity<AreaSession.ID> {
+public class AreaSession {
 
 	@EmbeddedId @Getter ID id;
 	

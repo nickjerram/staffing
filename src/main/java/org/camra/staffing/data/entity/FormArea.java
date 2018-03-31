@@ -11,14 +11,8 @@ import java.util.List;
 @Entity
 @Table(name="form_area")
 @EqualsAndHashCode(callSuper=false, of={"id"})
-public class FormArea extends StaffingEntity<Integer> {
+public class FormArea {
 
-	public FormArea() {}
-	
-	public FormArea(String name) {
-		this.name = name;
-	}
-	
 	@Id @Getter private Integer id;
 	private @Getter @Column(length = 50) String name;
 	private @Getter boolean dontmind;

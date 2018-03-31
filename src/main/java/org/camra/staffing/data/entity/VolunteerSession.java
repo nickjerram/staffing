@@ -13,7 +13,7 @@ import java.util.Date;
 @Table(name="volunteer_session")
 @Cacheable(false)
 @EqualsAndHashCode(callSuper=false, of={"id"})
-public class VolunteerSession extends StaffingEntity<VolunteerSession.ID> {
+public class VolunteerSession {
 	
 	public VolunteerSession() {}
 

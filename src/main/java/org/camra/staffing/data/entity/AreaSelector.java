@@ -16,7 +16,7 @@ import lombok.Getter;
 @Entity
 @Cacheable(false)
 @Table(name="area_selector")
-public class AreaSelector extends StaffingEntity<AreaSelector.ID> {
+public class AreaSelector {
 
 	@EmbeddedId @Getter ID id;
 	@Getter String name;
