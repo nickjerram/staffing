@@ -7,15 +7,27 @@ import org.camra.staffing.data.repository.MainViewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class MainViewService extends AbstractExampleService<MainViewDTO, MainView> {
 
     @Autowired private MainViewRepository mainViewRepository;
+
+    public Stream<MainViewDTO> getRecords(Specification<MainView> specification, Pageable pageable) {
+        return mainViewRepository.findAll(specification,pageable)
+                .getContent().stream().map(MainViewDTO::create);
+    }
+
+    public int countRecords(Specification<MainView> specification) {
+        return (int) mainViewRepository.count(specification);
+    }
 
     public List<MainViewDTO> getRecords(Query<MainViewDTO, Example<MainView>> query) {
         Page<MainView> queryResult;

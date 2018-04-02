@@ -4,31 +4,36 @@ import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
 import org.camra.staffing.data.dto.MainViewDTO;
 import org.camra.staffing.data.entity.MainView;
-import org.camra.staffing.data.service.AbstractExampleService;
 import org.camra.staffing.data.service.MainViewService;
+import org.camra.staffing.data.service.OffsetBasedPageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.PostConstruct;
-import java.util.Map;
+import java.util.stream.Stream;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
+import com.vaadin.data.provider.Query;
 
 @SpringComponent
 @UIScope
-public class MainAssignmentDataProvider extends ExampleDataProvider<MainViewDTO, MainView> {
+public class MainAssignmentDataProvider extends SortableDataProvider<MainViewDTO, MainView> {
 
-    @Autowired private MainViewService mainViewService;
+    @Autowired private MainViewService service;
 
-    @PostConstruct
-    private void init() {
-        createDelegate();
+    public boolean isInMemory() {
+        return false;
     }
 
-    @Override
-    protected AbstractExampleService<MainViewDTO, MainView> getService() {
-        return mainViewService;
+    protected Stream<MainViewDTO> fetchFromBackEnd(Query<MainViewDTO, String> query) {
+        Sort sort = doSortQuery(query);
+        Pageable pr = new OffsetBasedPageRequest(query.getOffset(), query.getLimit(), sort);
+        return service.getRecords(matches(), pr);
     }
 
-    @Override
-    public void setFilter(Map<String, String> stringStringMap) {
-
+    protected int sizeInBackEnd(Query<MainViewDTO, String> query) {
+        return service.countRecords(matches());
     }
+
+
 }
