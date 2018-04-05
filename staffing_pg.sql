@@ -178,7 +178,7 @@ CREATE TABLE public.area_session (
 ALTER TABLE public.area_session OWNER TO staffing;
 
 --
--- Name: assigned_counts; Type: TABLE; Schema: public; Owner: staffing
+-- Name: assigned_counts; Type: TABLE; Schema: public; Owner: nick
 --
 
 CREATE TABLE public.assigned_counts (
@@ -186,32 +186,15 @@ CREATE TABLE public.assigned_counts (
     worked bigint,
     areaid integer,
     sessionid integer,
-    required integer
+    required integer,
+    workedratio double precision,
+    requiredratio double precision
 );
 
 ALTER TABLE ONLY public.assigned_counts REPLICA IDENTITY NOTHING;
 
 
-ALTER TABLE public.assigned_counts OWNER TO staffing;
-
---
--- Name: session; Type: TABLE; Schema: public; Owner: staffing
---
-
-CREATE TABLE public.session (
-    id integer NOT NULL,
-    finish timestamp without time zone,
-    name character varying(50),
-    night boolean,
-    open boolean,
-    setup boolean,
-    special boolean,
-    start timestamp without time zone,
-    takedown boolean
-);
-
-
-ALTER TABLE public.session OWNER TO staffing;
+ALTER TABLE public.assigned_counts OWNER TO nick;
 
 --
 -- Name: volunteer_session; Type: TABLE; Schema: public; Owner: staffing
@@ -233,7 +216,51 @@ CREATE TABLE public.volunteer_session (
 ALTER TABLE public.volunteer_session OWNER TO staffing;
 
 --
--- Name: main_view; Type: VIEW; Schema: public; Owner: staffing
+-- Name: assignment_selector; Type: VIEW; Schema: public; Owner: nick
+--
+
+CREATE VIEW public.assignment_selector AS
+ SELECT vs.volunteerid,
+    vs.sessionid,
+    aa.id AS areaid,
+    aa.name,
+    va.preference,
+    c.assigned,
+    c.required,
+    c.requiredratio,
+        CASE
+            WHEN (vs.areaid = aa.id) THEN 1
+            ELSE 0
+        END AS selected
+   FROM (((public.assignable_area aa
+     JOIN public.volunteer_area va ON ((va.areaid = aa.id)))
+     JOIN public.assigned_counts c ON ((c.areaid = va.areaid)))
+     JOIN public.volunteer_session vs ON (((vs.sessionid = c.sessionid) AND (vs.volunteerid = va.volunteerid))));
+
+
+ALTER TABLE public.assignment_selector OWNER TO nick;
+
+--
+-- Name: session; Type: TABLE; Schema: public; Owner: staffing
+--
+
+CREATE TABLE public.session (
+    id integer NOT NULL,
+    finish timestamp without time zone,
+    name character varying(50),
+    night boolean,
+    open boolean,
+    setup boolean,
+    special boolean,
+    start timestamp without time zone,
+    takedown boolean
+);
+
+
+ALTER TABLE public.session OWNER TO staffing;
+
+--
+-- Name: main_view; Type: VIEW; Schema: public; Owner: nick
 --
 
 CREATE VIEW public.main_view AS
@@ -248,7 +275,9 @@ CREATE VIEW public.main_view AS
     (va.areaid = vs.areaid) AS current,
     ac.assigned,
     COALESCE(ac.worked, (0)::bigint) AS worked,
-    ac.required
+    ac.required,
+    ac.requiredratio,
+    ac.workedratio
    FROM (((((public.volunteer v
      JOIN public.volunteer_area va ON ((va.volunteerid = v.id)))
      JOIN public.volunteer_session vs ON ((vs.volunteerid = v.id)))
@@ -257,7 +286,7 @@ CREATE VIEW public.main_view AS
      JOIN public.assigned_counts ac ON (((ac.areaid = aa.id) AND (ac.sessionid = s.id))));
 
 
-ALTER TABLE public.main_view OWNER TO staffing;
+ALTER TABLE public.main_view OWNER TO nick;
 
 --
 -- Name: possible_session; Type: VIEW; Schema: public; Owner: staffing
@@ -300,31 +329,7 @@ CREATE TABLE public.sequence (
 ALTER TABLE public.sequence OWNER TO staffing;
 
 --
--- Name: view_assignment_selector; Type: VIEW; Schema: public; Owner: staffing
---
-
-CREATE VIEW public.view_assignment_selector AS
- SELECT vs.volunteerid,
-    vs.sessionid,
-    aa.id AS areaid,
-    aa.name,
-    va.preference,
-    c.assigned,
-    c.required,
-        CASE
-            WHEN (vs.areaid = aa.id) THEN 1
-            ELSE 0
-        END AS selected
-   FROM (((public.assignable_area aa
-     JOIN public.volunteer_area va ON ((va.areaid = aa.id)))
-     JOIN public.assigned_counts c ON ((c.areaid = va.areaid)))
-     JOIN public.volunteer_session vs ON (((vs.sessionid = c.sessionid) AND (vs.volunteerid = va.volunteerid))));
-
-
-ALTER TABLE public.view_assignment_selector OWNER TO staffing;
-
---
--- Name: view_volunteer_session; Type: VIEW; Schema: public; Owner: staffing
+-- Name: view_volunteer_session; Type: VIEW; Schema: public; Owner: nick
 --
 
 CREATE VIEW public.view_volunteer_session AS
@@ -344,7 +349,8 @@ CREATE VIEW public.view_volunteer_session AS
     vs.worked,
     vs.tokens,
     c.assigned,
-    c.required
+    c.required,
+    c.requiredratio
    FROM ((((public.volunteer_session vs
      JOIN public.assigned_counts c ON (((c.areaid = vs.areaid) AND (c.sessionid = vs.sessionid))))
      JOIN public.volunteer v ON ((v.id = vs.volunteerid)))
@@ -352,7 +358,7 @@ CREATE VIEW public.view_volunteer_session AS
      JOIN public.assignable_area a ON ((a.id = vs.areaid)));
 
 
-ALTER TABLE public.view_volunteer_session OWNER TO staffing;
+ALTER TABLE public.view_volunteer_session OWNER TO nick;
 
 --
 -- Data for Name: admin_login; Type: TABLE DATA; Schema: public; Owner: staffing
@@ -9762,7 +9768,7 @@ ALTER TABLE ONLY public.volunteer_session
 
 
 --
--- Name: assigned_counts _RETURN; Type: RULE; Schema: public; Owner: staffing
+-- Name: assigned_counts _RETURN; Type: RULE; Schema: public; Owner: nick
 --
 
 CREATE RULE "_RETURN" AS
@@ -9770,7 +9776,15 @@ CREATE RULE "_RETURN" AS
     sum((vs.worked)::integer) AS worked,
     ars.areaid,
     ars.sessionid,
-    ars.required
+    ars.required,
+        CASE count(vs.volunteerid)
+            WHEN 0 THEN NULL::double precision
+            ELSE ((sum((vs.worked)::integer))::double precision / (count(vs.volunteerid))::double precision)
+        END AS workedratio,
+        CASE ars.required
+            WHEN 0 THEN NULL::double precision
+            ELSE ((count(vs.volunteerid))::double precision / (ars.required)::double precision)
+        END AS requiredratio
    FROM (public.area_session ars
      LEFT JOIN public.volunteer_session vs ON (((vs.sessionid = ars.sessionid) AND (vs.areaid = ars.areaid))))
   GROUP BY ars.areaid, ars.sessionid;
