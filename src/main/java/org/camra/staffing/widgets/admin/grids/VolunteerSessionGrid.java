@@ -7,7 +7,7 @@ import org.camra.staffing.data.entity.VolunteerSession;
 
 import java.util.Date;
 
-public class VolunteerSessionGrid extends MainGrid<VolunteerSessionDTO, VolunteerSession> {
+public class VolunteerSessionGrid extends AbstractGrid<VolunteerSessionDTO, VolunteerSession> {
 
     public enum Type {VOLUNTEER, SESSION}
 

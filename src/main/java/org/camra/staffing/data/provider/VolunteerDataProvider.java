@@ -4,8 +4,6 @@ import org.camra.staffing.data.dto.VolunteerDTO;
 import org.camra.staffing.data.entity.Volunteer;
 import org.camra.staffing.data.service.OffsetBasedPageRequest;
 import org.camra.staffing.data.service.VolunteerService;
-import org.camra.staffing.data.specification.SearchCriterion;
-import org.camra.staffing.data.specification.VolunteerSpecification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -27,16 +25,12 @@ public class VolunteerDataProvider extends SortableDataProvider<VolunteerDTO,Vol
     protected Stream<VolunteerDTO> fetchFromBackEnd(Query<VolunteerDTO, String> query) {
         Sort sort = doSortQuery(query);
         Pageable pr = new OffsetBasedPageRequest(query.getOffset(), query.getLimit(), sort);
-        return volunteerService.getVolunteers(specification, pr);
+        return volunteerService.getVolunteers(buildSpecification(), pr);
     }
 
     @Override
     protected int sizeInBackEnd(Query<VolunteerDTO, String> query) {
-        return volunteerService.getVolunteerCount(specification);
+        return volunteerService.getVolunteerCount(buildSpecification());
     }
 
-    @Override
-    protected Specification<Volunteer> createSpecification(SearchCriterion criterion) {
-        return new VolunteerSpecification(criterion);
-    }
 }

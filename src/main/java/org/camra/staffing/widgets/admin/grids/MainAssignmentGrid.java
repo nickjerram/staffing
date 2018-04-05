@@ -14,7 +14,7 @@ import javax.annotation.PostConstruct;
 
 @UIScope
 @SpringComponent
-public class MainAssignmentGrid extends MainGrid<MainViewDTO, MainView> {
+public class MainAssignmentGrid extends AbstractGrid<MainViewDTO, MainView> {
 
     @Autowired private MainAssignmentDataProvider dataProvider;
 
@@ -25,14 +25,20 @@ public class MainAssignmentGrid extends MainGrid<MainViewDTO, MainView> {
         addColumn(MainViewDTO::getVolunteerId).setCaption("").setId("volunteerId");
         addColumn(MainViewDTO::getForename).setCaption("Forename").setId("forename");
         addColumn(MainViewDTO::getSurname).setCaption("Surname").setId("surname");
-        addColumn(MainViewDTO::getSessionName).setCaption("Session").setId("session");
-        addColumn(MainViewDTO::getAreaName).setCaption("Area").setId("area");
+        addColumn(MainViewDTO::getSessionName).setCaption("Session").setId("sessionName");
+        addColumn(MainViewDTO::getAreaName).setCaption("Area").setId("areaName");
         addColumn(MainViewDTO::isCurrent).setCaption("Is Assigned").setId("current");
         addColumn(this::formatAssigned, new HtmlRenderer()).setCaption("Assigned").setId("assigned");
         addColumn(this::formatWorked, new HtmlRenderer()).setCaption("Worked").setId("worked");
 
         HeaderRow groupRow = prependHeaderRow();
         groupRow.join("volunteerId","forename","surname").setText("Volunteer");
+
+        addStringFilters("surname","sessionName","areaName");
+
+        addRatioFilter("assigned","assigned","required","requiredRatio");
+
+        addBooleanFilter("current");
     }
 
     private String formatAssigned(MainViewDTO dto) {

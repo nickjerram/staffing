@@ -6,7 +6,6 @@ import org.camra.staffing.data.dto.MainViewDTO;
 import org.camra.staffing.data.entityviews.MainView;
 import org.camra.staffing.data.service.MainViewService;
 import org.camra.staffing.data.service.OffsetBasedPageRequest;
-import org.camra.staffing.data.specification.SearchCriterion;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -32,18 +31,12 @@ public class MainAssignmentDataProvider extends SortableDataProvider<MainViewDTO
     protected Stream<MainViewDTO> fetchFromBackEnd(Query<MainViewDTO, String> query) {
         Sort sort = doSortQuery(query);
         Pageable pr = new OffsetBasedPageRequest(query.getOffset(), query.getLimit(), sort);
-
-        List<MainViewDTO> empty = new ArrayList<>();
-        return empty.stream();
+        return service.getRecords(buildSpecification(), pr);
     }
 
     protected int sizeInBackEnd(Query<MainViewDTO, String> query) {
-        return 0;
+        return service.getRecordCount(buildSpecification());
     }
 
 
-    @Override
-    protected Specification<MainView> createSpecification(SearchCriterion criterion) {
-        return null;
-    }
 }

@@ -1,6 +1,7 @@
 package org.camra.staffing.data.provider;
 
-import org.camra.staffing.data.specification.SearchCriterion;
+import org.camra.staffing.data.specification.RatioCriterion;
+import org.camra.staffing.data.specification.StringCriterion;
 import org.springframework.data.domain.Sort;
 
 import com.vaadin.data.provider.AbstractBackEndDataProvider;
@@ -10,21 +11,13 @@ import com.vaadin.shared.data.sort.SortDirection;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.domain.Specifications;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collector;
+
 
 public abstract class SortableDataProvider<DTO,E> extends AbstractBackEndDataProvider<DTO,String> {
 
-    private Map<String, SearchCriterion> criteria = new HashMap<>();
-
-    protected Specification<E> specification;
+    Map<String,Specification<E>> specificationMap = new HashMap<>();
 
     /**
      * Convert Vaadin Sort query into Spring JPA Sort
@@ -48,20 +41,25 @@ public abstract class SortableDataProvider<DTO,E> extends AbstractBackEndDataPro
         return sort;
     }
 
-    public void addFilter(String columnId, String filter) {
-        criteria.put(columnId, new SearchCriterion(columnId,":", filter));
-        List<Specification<E>> specificationList = new ArrayList<>();
-        for (SearchCriterion criterion : criteria.values()) {
-            specificationList.add(createSpecification(criterion));
-        }
-        specification = specificationList.get(0);
-        for (int i=1; i<specificationList.size(); i++) {
-            specification = Specifications.where(specification).and(specificationList.get(i));
-        }
+    public void addStringFilter(String columnId, String filter) {
+        StringCriterion<E> criterion = new StringCriterion<>(columnId, filter);
+        specificationMap.put(columnId, criterion);
         refreshAll();
     }
 
-    protected abstract Specification<E> createSpecification(SearchCriterion criterion);
+    public void addRatioFilter(String columnId, String topProperty, String bottomProperty, String ratioProperty, String expression) {
+        RatioCriterion<E> criterion = new RatioCriterion<>(topProperty, bottomProperty, ratioProperty);
+        criterion.setFilter(expression);
+        specificationMap.put(columnId, criterion);
+        refreshAll();
+    }
 
+    Specification<E> buildSpecification() {
+        Specification<E> result = Specifications.where(null);
+        for (Specification<E> specification : specificationMap.values()) {
+            result = Specifications.where(result).and(specification);
+        }
+        return result;
+    }
 
 }

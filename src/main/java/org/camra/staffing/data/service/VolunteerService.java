@@ -8,7 +8,6 @@ import org.camra.staffing.data.entityviews.AssignmentSelectorView;
 import org.camra.staffing.data.entityviews.PossibleSession;
 import org.camra.staffing.data.entityviews.VolunteerSessionView;
 import org.camra.staffing.data.repository.*;
-import org.camra.staffing.data.specification.VolunteerSpecification;
 import org.camra.staffing.util.CamraMember;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;

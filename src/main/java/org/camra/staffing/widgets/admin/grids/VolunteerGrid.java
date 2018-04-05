@@ -1,12 +1,8 @@
 package org.camra.staffing.widgets.admin.grids;
 
-import com.vaadin.data.HasValue;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
-import com.vaadin.ui.TextField;
-import com.vaadin.ui.components.grid.HeaderCell;
-import com.vaadin.ui.components.grid.HeaderRow;
 import com.vaadin.ui.renderers.HtmlRenderer;
 import com.vaadin.ui.renderers.NumberRenderer;
 import org.camra.staffing.data.dto.VolunteerDTO;
@@ -19,7 +15,7 @@ import javax.annotation.PostConstruct;
 
 @SpringComponent
 @UIScope
-public class VolunteerGrid extends MainGrid<VolunteerDTO,Volunteer> {
+public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
 
     @Autowired private VolunteerDataProvider volunteerDataProvider;
 
@@ -42,7 +38,8 @@ public class VolunteerGrid extends MainGrid<VolunteerDTO,Volunteer> {
         addColumn(this::formatCellar, new HtmlRenderer()).setCaption("Cellar").setSortable(false);
         addColumn(this::formatComment).setCaption("Comment").setSortable(false);
 
-        addFilters("surname","role");
+        addStringFilters("surname","role");
+
     }
 
     private String formatEdit(VolunteerDTO item) {
