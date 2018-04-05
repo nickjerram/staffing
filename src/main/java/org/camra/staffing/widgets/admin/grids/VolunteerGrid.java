@@ -1,5 +1,6 @@
 package org.camra.staffing.widgets.admin.grids;
 
+import com.vaadin.data.HasValue;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
@@ -8,8 +9,9 @@ import com.vaadin.ui.components.grid.HeaderCell;
 import com.vaadin.ui.components.grid.HeaderRow;
 import com.vaadin.ui.renderers.HtmlRenderer;
 import com.vaadin.ui.renderers.NumberRenderer;
-import com.vaadin.ui.themes.ValoTheme;
 import org.camra.staffing.data.dto.VolunteerDTO;
+import org.camra.staffing.data.entity.Volunteer;
+import org.camra.staffing.data.provider.SortableDataProvider;
 import org.camra.staffing.data.provider.VolunteerDataProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -17,7 +19,7 @@ import javax.annotation.PostConstruct;
 
 @SpringComponent
 @UIScope
-public class VolunteerGrid extends MainGrid<VolunteerDTO> {
+public class VolunteerGrid extends MainGrid<VolunteerDTO,Volunteer> {
 
     @Autowired private VolunteerDataProvider volunteerDataProvider;
 
@@ -40,10 +42,7 @@ public class VolunteerGrid extends MainGrid<VolunteerDTO> {
         addColumn(this::formatCellar, new HtmlRenderer()).setCaption("Cellar").setSortable(false);
         addColumn(this::formatComment).setCaption("Comment").setSortable(false);
 
-        HeaderRow filterRow = appendHeaderRow();
-        addStringFilter(filterRow, "surname");
-        addStringFilter(filterRow, "role");
-
+        addFilters("surname","role");
     }
 
     private String formatEdit(VolunteerDTO item) {
@@ -92,15 +91,8 @@ public class VolunteerGrid extends MainGrid<VolunteerDTO> {
         }
     }
 
-    private void addStringFilter(HeaderRow filterRow, String fieldName) {
-        HeaderCell headerCell = filterRow.getCell(getColumn(fieldName));
-        TextField filterField = new TextField();
-        filterField.addStyleName(ValoTheme.TEXTFIELD_TINY);
-        filterField.addValueChangeListener(event -> {
-            volunteerDataProvider.addFilter(fieldName, event.getValue());
-            volunteerDataProvider.refreshAll();
-        });
-        headerCell.setComponent(filterField);
+    protected SortableDataProvider<VolunteerDTO, Volunteer> dataProvider() {
+        return volunteerDataProvider;
     }
 
 }

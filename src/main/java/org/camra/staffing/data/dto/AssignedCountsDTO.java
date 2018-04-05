@@ -1,8 +1,7 @@
 package org.camra.staffing.data.dto;
 
 import lombok.Getter;
-import org.camra.staffing.data.entity.AssignedCounts;
-import org.springframework.beans.BeanUtils;
+import org.camra.staffing.data.entityviews.AssignedCounts;
 
 @Getter
 public class AssignedCountsDTO {

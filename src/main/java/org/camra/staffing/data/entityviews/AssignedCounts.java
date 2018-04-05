@@ -1,4 +1,4 @@
-package org.camra.staffing.data.entity;
+package org.camra.staffing.data.entityviews;
 
 import lombok.Data;
 import lombok.Getter;

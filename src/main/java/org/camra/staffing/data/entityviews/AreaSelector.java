@@ -1,4 +1,4 @@
-package org.camra.staffing.data.entity;
+package org.camra.staffing.data.entityviews;
 
 import java.io.Serializable;
 
@@ -12,6 +12,7 @@ import javax.persistence.Table;
 
 import lombok.Data;
 import lombok.Getter;
+import org.camra.staffing.data.entity.Preference;
 
 @Entity
 @Cacheable(false)
@@ -22,7 +23,8 @@ public class AreaSelector {
 	@Getter String name;
 	
 	@Enumerated(EnumType.ORDINAL)
-	@Getter Preference preference;
+	@Getter
+	Preference preference;
 
 	@Embeddable @Data
 	public static class ID implements Serializable {

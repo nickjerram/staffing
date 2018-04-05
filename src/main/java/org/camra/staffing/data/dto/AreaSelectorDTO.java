@@ -3,10 +3,9 @@ package org.camra.staffing.data.dto;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.camra.staffing.data.entity.AreaSelector;
+import org.camra.staffing.data.entityviews.AreaSelector;
 import org.camra.staffing.data.entity.AssignableArea;
 import org.camra.staffing.data.entity.Preference;
-import org.camra.staffing.data.entity.VolunteerArea;
 
 /**
  * Used on VolunteerForm for selecting area preferences

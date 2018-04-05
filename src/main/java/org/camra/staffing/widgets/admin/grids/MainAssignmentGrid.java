@@ -1,24 +1,20 @@
 package org.camra.staffing.widgets.admin.grids;
 
-import com.vaadin.data.provider.DataProvider;
-import com.vaadin.data.provider.Query;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
+import com.vaadin.ui.components.grid.HeaderRow;
 import com.vaadin.ui.renderers.HtmlRenderer;
 import org.camra.staffing.data.dto.MainViewDTO;
-import org.camra.staffing.data.dto.VolunteerDTO;
+import org.camra.staffing.data.entityviews.MainView;
 import org.camra.staffing.data.provider.MainAssignmentDataProvider;
-import org.camra.staffing.data.service.MainViewService;
+import org.camra.staffing.data.provider.SortableDataProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
-import java.util.stream.Stream;
 
 @UIScope
 @SpringComponent
-public class MainAssignmentGrid extends MainGrid<MainViewDTO> {
-
-    @Autowired private MainViewService service;
+public class MainAssignmentGrid extends MainGrid<MainViewDTO, MainView> {
 
     @Autowired private MainAssignmentDataProvider dataProvider;
 
@@ -34,6 +30,9 @@ public class MainAssignmentGrid extends MainGrid<MainViewDTO> {
         addColumn(MainViewDTO::isCurrent).setCaption("Is Assigned").setId("current");
         addColumn(this::formatAssigned, new HtmlRenderer()).setCaption("Assigned").setId("assigned");
         addColumn(this::formatWorked, new HtmlRenderer()).setCaption("Worked").setId("worked");
+
+        HeaderRow groupRow = prependHeaderRow();
+        groupRow.join("volunteerId","forename","surname").setText("Volunteer");
     }
 
     private String formatAssigned(MainViewDTO dto) {
@@ -44,4 +43,7 @@ public class MainAssignmentGrid extends MainGrid<MainViewDTO> {
         return Columns.formatRatio(dto.getWorked(), dto.getAssigned());
     }
 
+    protected SortableDataProvider<MainViewDTO, MainView> dataProvider() {
+        return dataProvider;
+    }
 }

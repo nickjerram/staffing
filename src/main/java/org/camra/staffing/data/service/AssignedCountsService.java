@@ -1,14 +1,13 @@
 package org.camra.staffing.data.service;
 
 import org.camra.staffing.data.dto.AssignedCountsDTO;
-import org.camra.staffing.data.entity.AssignedCounts;
+import org.camra.staffing.data.entityviews.AssignedCounts;
 import org.camra.staffing.data.repository.AssignedCountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service

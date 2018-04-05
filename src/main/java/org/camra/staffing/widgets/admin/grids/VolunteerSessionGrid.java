@@ -3,10 +3,11 @@ package org.camra.staffing.widgets.admin.grids;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.ui.renderers.HtmlRenderer;
 import org.camra.staffing.data.dto.VolunteerSessionDTO;
+import org.camra.staffing.data.entity.VolunteerSession;
 
 import java.util.Date;
 
-public class VolunteerSessionGrid extends MainGrid<VolunteerSessionDTO> {
+public class VolunteerSessionGrid extends MainGrid<VolunteerSessionDTO, VolunteerSession> {
 
     public enum Type {VOLUNTEER, SESSION}
 

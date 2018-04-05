@@ -1,6 +1,6 @@
 package org.camra.staffing.data.repository;
 
-import org.camra.staffing.data.entity.AreaSelector;
+import org.camra.staffing.data.entityviews.AreaSelector;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

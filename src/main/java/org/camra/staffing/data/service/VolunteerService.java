@@ -3,21 +3,26 @@ package org.camra.staffing.data.service;
 import com.vaadin.data.provider.Query;
 import org.camra.staffing.data.dto.*;
 import org.camra.staffing.data.entity.*;
+import org.camra.staffing.data.entityviews.AreaSelector;
 import org.camra.staffing.data.entityviews.AssignmentSelectorView;
+import org.camra.staffing.data.entityviews.PossibleSession;
 import org.camra.staffing.data.entityviews.VolunteerSessionView;
 import org.camra.staffing.data.repository.*;
+import org.camra.staffing.data.specification.VolunteerSpecification;
 import org.camra.staffing.util.CamraMember;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
-public class VolunteerService extends AbstractExampleService<VolunteerDTO, Volunteer> {
+public class VolunteerService {
 
     @Autowired private VolunteerRepository volunteerRepository;
     @Autowired private AreaSelectorRepository areaSelectorRepository;
@@ -27,14 +32,12 @@ public class VolunteerService extends AbstractExampleService<VolunteerDTO, Volun
     @Autowired private VolunteerSessionRepository volunteerSessionRepository;
     @Autowired private PossibleSessionRepository possibleSessionRepository;
 
-    public List<VolunteerDTO> getRecords(Query<VolunteerDTO,Example<Volunteer>> query) {
-        Page<Volunteer> queryResult;
-        if (query.getFilter().isPresent()) {
-            queryResult = volunteerRepository.findAll(query.getFilter().get(), pageRequest(query, "surname"));
-        } else {
-            queryResult = volunteerRepository.findAll(pageRequest(query, "surname"));
-        }
-        return queryResult.getContent().stream().map(VolunteerDTO::create).collect(Collectors.toList());
+    public Stream<VolunteerDTO> getVolunteers(Specification<Volunteer> specification, Pageable pageable) {
+        return volunteerRepository.findAll(specification, pageable).getContent().stream().map(VolunteerDTO::create);
+    }
+
+    public int getVolunteerCount(Specification<Volunteer> specification) {
+        return (int) volunteerRepository.count(specification);
     }
 
     public Optional<VolunteerDTO> getVolunteer(String uuid) {
@@ -81,7 +84,8 @@ public class VolunteerService extends AbstractExampleService<VolunteerDTO, Volun
     }
 
     public List<VolunteerSessionDTO> getSessions(int volunteerId, Query<VolunteerSessionDTO,Void> query) {
-        List<VolunteerSessionView> volunteerSessions = volunteerSessionRepository.findByIdVolunteerId(volunteerId, pageRequest(query, "sessionStart"));
+        OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(query.getOffset(), query.getLimit());
+        List<VolunteerSessionView> volunteerSessions = volunteerSessionRepository.findByIdVolunteerId(volunteerId, pageRequest);
         return volunteerSessions.stream().map(VolunteerSessionDTO::create).collect(Collectors.toList());
     }
 

@@ -2,7 +2,7 @@ package org.camra.staffing.data.dto;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.camra.staffing.data.entity.PossibleSession;
+import org.camra.staffing.data.entityviews.PossibleSession;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;

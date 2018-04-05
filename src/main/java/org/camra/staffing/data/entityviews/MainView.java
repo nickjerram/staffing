@@ -1,4 +1,4 @@
-package org.camra.staffing.data.entity;
+package org.camra.staffing.data.entityviews;
 
 import lombok.Getter;
 
@@ -22,8 +22,11 @@ public class MainView {
     private int assigned;
     private int worked;
     private int required;
+    private double requiredRatio;
+    private double workedRatio;
 
     public String toString() {
         return ""+id+" "+surname+" "+forename;
     }
+
 }

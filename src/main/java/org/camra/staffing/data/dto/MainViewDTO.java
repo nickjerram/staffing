@@ -1,9 +1,8 @@
 package org.camra.staffing.data.dto;
 
 import lombok.Data;
-import lombok.Getter;
 import lombok.ToString;
-import org.camra.staffing.data.entity.MainView;
+import org.camra.staffing.data.entityviews.MainView;
 import org.springframework.beans.BeanUtils;
 
 @Data
