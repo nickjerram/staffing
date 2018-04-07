@@ -46,7 +46,7 @@ public class VolunteerSessionFormLogic extends VolunteerSessionForm {
         binder.forField(comment).bind(VolunteerSessionDTO::getComment, VolunteerSessionDTO::setComment);
         binder.forField(locked).bind(VolunteerSessionDTO::isLocked, VolunteerSessionDTO::setLocked);
         binder.addStatusChangeListener(event -> save.setEnabled(!event.hasValidationErrors() && binder.hasChanges()));
-        cancel.addClickListener(event -> removeStyleName("visible"));
+        cancel.addClickListener(event -> hide());
         save.setEnabled(false);
         save.addClickListener(event -> save());
     }
@@ -60,9 +60,6 @@ public class VolunteerSessionFormLogic extends VolunteerSessionForm {
         sessionSelectorGrid.setVolunteerId(volunteer.getId());
         sessionSelectorGrid.setChangeHandler(this::sessionsChanged);
         sessionSelectorGrid.setSizeFull();
-        if (reassignmentGrid!=null) {
-            formLayout.removeComponent(reassignmentGrid);
-        }
         formLayout.addComponent(sessionSelectorGrid, 4);
         formLayout.setExpandRatio(sessionSelectorGrid, 1);
         addStyleName("visible");
@@ -84,9 +81,6 @@ public class VolunteerSessionFormLogic extends VolunteerSessionForm {
         reassignmentGrid.setItems(options);
         reassignmentGrid.setReassignmentHandler(this::reassign);
         reassignmentGrid.setSizeFull();
-        if (sessionSelectorGrid!=null) {
-            formLayout.removeComponent(sessionSelectorGrid);
-        }
         formLayout.addComponent(reassignmentGrid,4);
         formLayout.setExpandRatio(reassignmentGrid, 1);
         addStyleName("visible");
@@ -104,14 +98,28 @@ public class VolunteerSessionFormLogic extends VolunteerSessionForm {
     private void save() {
         if (volunteerSession!=null) {
             binder.writeBeanIfValid(volunteerSession);
-            volunteerSession.setAreaId(newAssignment.getAreaId());
+            if (newAssignment!=null) {
+                volunteerSession.setAreaId(newAssignment.getAreaId());
+            }
             volunteerService.saveAssignment(volunteerSession);
         } else if (volunteer!=null) {
             List<Integer> sessionIds = sessionSelectorGrid.getNewSessions().stream().map(SessionSelectorDTO::getSessionId).collect(Collectors.toList());
             volunteerService.saveVolunteerSession(volunteer.getId(), sessionIds);
         }
-        removeStyleName("visible");
+        hide();
         saveHandler.ifPresent(h -> h.accept(volunteerSession));
+    }
+
+    private void hide() {
+        if (reassignmentGrid!=null) {
+            formLayout.removeComponent(reassignmentGrid);
+            reassignmentGrid = null;
+        }
+        if (sessionSelectorGrid!=null) {
+            formLayout.removeComponent(sessionSelectorGrid);
+            sessionSelectorGrid = null;
+        }
+        removeStyleName("visible");
     }
 
 

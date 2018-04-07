@@ -178,7 +178,7 @@ CREATE TABLE public.area_session (
 ALTER TABLE public.area_session OWNER TO staffing;
 
 --
--- Name: assigned_counts; Type: TABLE; Schema: public; Owner: nick
+-- Name: assigned_counts; Type: TABLE; Schema: public; Owner: staffing
 --
 
 CREATE TABLE public.assigned_counts (
@@ -194,7 +194,7 @@ CREATE TABLE public.assigned_counts (
 ALTER TABLE ONLY public.assigned_counts REPLICA IDENTITY NOTHING;
 
 
-ALTER TABLE public.assigned_counts OWNER TO nick;
+ALTER TABLE public.assigned_counts OWNER TO staffing;
 
 --
 -- Name: volunteer_session; Type: TABLE; Schema: public; Owner: staffing
@@ -216,7 +216,7 @@ CREATE TABLE public.volunteer_session (
 ALTER TABLE public.volunteer_session OWNER TO staffing;
 
 --
--- Name: assignment_selector; Type: VIEW; Schema: public; Owner: nick
+-- Name: assignment_selector; Type: VIEW; Schema: public; Owner: staffing
 --
 
 CREATE VIEW public.assignment_selector AS
@@ -238,7 +238,7 @@ CREATE VIEW public.assignment_selector AS
      JOIN public.volunteer_session vs ON (((vs.sessionid = c.sessionid) AND (vs.volunteerid = va.volunteerid))));
 
 
-ALTER TABLE public.assignment_selector OWNER TO nick;
+ALTER TABLE public.assignment_selector OWNER TO staffing;
 
 --
 -- Name: session; Type: TABLE; Schema: public; Owner: staffing
@@ -260,33 +260,41 @@ CREATE TABLE public.session (
 ALTER TABLE public.session OWNER TO staffing;
 
 --
--- Name: main_view; Type: VIEW; Schema: public; Owner: nick
+-- Name: main_view; Type: VIEW; Schema: public; Owner: staffing
 --
 
 CREATE VIEW public.main_view AS
  SELECT (((v.id * 10000) + (vs.sessionid * 100)) + va.areaid) AS id,
     v.id AS volunteerid,
-    v.forename,
-    v.surname,
+    (((v.forename)::text || ' '::text) || (v.surname)::text) AS volunteer_name,
     vs.sessionid,
     s.name AS session_name,
+    s.start,
     va.areaid,
     aa.name AS area_name,
+    vs.areaid AS current_area_id,
+    aaa.name AS current_area_name,
     (va.areaid = vs.areaid) AS current,
+    (va.preference = 2) AS yes_area,
     ac.assigned,
     COALESCE(ac.worked, (0)::bigint) AS worked,
     ac.required,
     ac.requiredratio,
-    ac.workedratio
-   FROM (((((public.volunteer v
+    ac.workedratio,
+    vs.locked,
+    vs.worked AS volunteer_worked,
+    vs.tokens,
+    vs.comment
+   FROM ((((((public.volunteer v
      JOIN public.volunteer_area va ON ((va.volunteerid = v.id)))
      JOIN public.volunteer_session vs ON ((vs.volunteerid = v.id)))
      JOIN public.assignable_area aa ON ((aa.id = va.areaid)))
+     JOIN public.assignable_area aaa ON ((aaa.id = vs.areaid)))
      JOIN public.session s ON ((s.id = vs.sessionid)))
      JOIN public.assigned_counts ac ON (((ac.areaid = aa.id) AND (ac.sessionid = s.id))));
 
 
-ALTER TABLE public.main_view OWNER TO nick;
+ALTER TABLE public.main_view OWNER TO staffing;
 
 --
 -- Name: possible_session; Type: VIEW; Schema: public; Owner: staffing
@@ -329,7 +337,31 @@ CREATE TABLE public.sequence (
 ALTER TABLE public.sequence OWNER TO staffing;
 
 --
--- Name: view_volunteer_session; Type: VIEW; Schema: public; Owner: nick
+-- Name: view_assignment_selector; Type: VIEW; Schema: public; Owner: staffing
+--
+
+CREATE VIEW public.view_assignment_selector AS
+ SELECT vs.volunteerid,
+    vs.sessionid,
+    aa.id AS areaid,
+    aa.name,
+    va.preference,
+    c.assigned,
+    c.required,
+        CASE
+            WHEN (vs.areaid = aa.id) THEN 1
+            ELSE 0
+        END AS selected
+   FROM (((public.assignable_area aa
+     JOIN public.volunteer_area va ON ((va.areaid = aa.id)))
+     JOIN public.assigned_counts c ON ((c.areaid = va.areaid)))
+     JOIN public.volunteer_session vs ON (((vs.sessionid = c.sessionid) AND (vs.volunteerid = va.volunteerid))));
+
+
+ALTER TABLE public.view_assignment_selector OWNER TO staffing;
+
+--
+-- Name: view_volunteer_session; Type: VIEW; Schema: public; Owner: staffing
 --
 
 CREATE VIEW public.view_volunteer_session AS
@@ -358,7 +390,7 @@ CREATE VIEW public.view_volunteer_session AS
      JOIN public.assignable_area a ON ((a.id = vs.areaid)));
 
 
-ALTER TABLE public.view_volunteer_session OWNER TO nick;
+ALTER TABLE public.view_volunteer_session OWNER TO staffing;
 
 --
 -- Data for Name: admin_login; Type: TABLE DATA; Schema: public; Owner: staffing
@@ -1490,7 +1522,7 @@ COPY public.form_area (id, dontmind, name) FROM stdin;
 --
 
 COPY public.sequence (seq_name, seq_count) FROM stdin;
-SEQ_GEN	2000
+SEQ_GEN	2050
 \.
 
 
@@ -1542,12 +1574,8 @@ COPY public.session (id, finish, name, night, open, setup, special, start, taked
 --
 
 COPY public.volunteer (id, callsign, camping, cellar, comment, confirmed, email, emailverified, firstaid, forename, forklift, instructions, managervouch, membership, other, password, picture, role, sia, surname, tshirt, uuid, verified) FROM stdin;
-51	\N	f	f	\N	f		f	f		f	f	\N		f	\N	\N	\N	f		\N	\N	f
-1951	\N	f	f	\N	f	nick.jerram@gmail.com	f	f	A	f	f	\N	\N	f	\N	\N	\N	f	A	\N	cb871fb3-6262-4669-a217-e8b6276c7e44	f
 101	\N	f	f		f	\N	f	f	Fred	f	f	\N	\N	f	\N	\N		f	Flintstone	\N	\N	f
-654	\N	f	f		f	\N	f	f	Chris	f	f	\N	\N	f	\N	\N		f	Elliott	\N	\N	f
-1751	\N	f	f		f	nick.jerram@googlemail.com	t	f	Nick	f	t		176340	f	\N	\N	\N	f	Jerram	\N	111	t
-1801	\N	f	f	\N	f	a@a	f	f	a	f	f	\N	\N	f	\N	\N	\N	f	a	\N	e31ed14e-5988-41d6-821e-0107bee35fbe	f
+2001	\N	f	f		f	nick.jerram@googlemail.com	t	f	Nick	f	t		176340	f	\N	\N	\N	f	Jerram	\N	\N	t
 724	\N	f	f		f	\N	f	f	Elvis	f	f	\N	\N	f	\N	\N		f	Evans	\N	\N	f
 725	\N	f	f		f	\N	f	f	Andrew	f	f	\N	\N	f	\N	\N		f	Waterfall	\N	\N	f
 726	\N	f	f		f	\N	f	f	Stuart	f	f	\N	\N	f	\N	\N		f	Evans	\N	\N	f
@@ -1562,7 +1590,6 @@ COPY public.volunteer (id, callsign, camping, cellar, comment, confirmed, email,
 735	\N	f	f	Work the same sessions as my husband - member no 536222 ( Martin Jones) 	f	\N	f	f	Ann	f	f	\N	\N	f	\N	\N		f	Martin Jones	\N	\N	f
 736	\N	f	f	Can you please allocate me to back of house.\n\\\n\n\\\nI will be sorting cask ends and helping cover on entrance and some other bits for the few days I am on site.	f	\N	f	f	Adam	f	f	\N	\N	f	\N	\N		f	Gent	\N	\N	f
 737	\N	f	f	Please can I work on the same bar as Evelyn Harrison-Bullock.	f	\N	f	f	Josh	f	f	\N	\N	f	\N	\N		f	Harrison-Bullock	\N	\N	f
-738	\N	f	f		f	\N	f	f	Mark	f	f	\N	\N	f	\N	\N		f	Rickson	\N	\N	f
 740	\N	f	f	For the last few years I've worked on the wine bar, so I'm familiar with the products and procedures. If possible I would like to work on the wine bar again this year - thanks!	f	\N	f	f	Frances	f	f	\N	\N	f	\N	\N		f	McFadden	\N	\N	f
 741	\N	f	f		f	\N	f	f	Neil	f	f	\N	\N	f	\N	\N		f	Lavington	\N	\N	f
 742	\N	f	f		f	\N	f	f	grace	f	f	\N	\N	f	\N	\N		f	Bradbrook	\N	\N	f
@@ -1792,7 +1819,6 @@ COPY public.volunteer (id, callsign, camping, cellar, comment, confirmed, email,
 668	\N	f	f		f	\N	f	f	Sue	f	f	\N	\N	f	\N	\N	Foreign Bar Manager	f	Thirlaway	\N	\N	f
 677	\N	f	f		f	\N	f	f	A	f	f	\N	\N	f	\N	\N		f	A	\N	\N	f
 151	\N	f	f		f	\N	f	f	Flash	f	f	\N	\N	f	\N	\N		f	Gordon	\N	\N	f
-501	\N	f	f		f	\N	f	f	Nick	f	f	\N	\N	f	\N	\N	Staffing Manager	f	Jerram	\N	\N	f
 502	\N	f	f		f	\N	f	f	Joy	f	f	\N	\N	f	\N	\N	Administration	f	Jerram	\N	\N	f
 503	\N	f	f	Festival publicity.	f	\N	f	f	Mark	f	f	\N	\N	f	\N	\N	Publicity Manager	f	Johnston	\N	\N	f
 504	\N	f	f	Site Team\n\\\n	f	\N	f	f	Katrina	f	f	\N	\N	f	\N	\N	Setup Coordinator	f	Fletcher	\N	\N	f
@@ -1906,7 +1932,6 @@ COPY public.volunteer (id, callsign, camping, cellar, comment, confirmed, email,
 1851	\N	f	f	\N	f	a@a	f	f	a@a	f	f	\N	\N	f	\N	\N	\N	f	a@a	\N	9ecf7f10-a883-4d55-987b-ba9102b67788	f
 1	\N	f	f	\N	f		f	f		f	f	\N		f	\N	\N	\N	f		\N	\N	f
 2	\N	f	f	\N	f		f	f		f	f	\N		f	\N	\N	\N	f		\N	\N	f
-1901	\N	f	f		f	nick.jerram@gmail.com	t	f	Nick	f	t		66535	f	\N	\N	\N	f	Jerram	\N	a537265b-fc03-43eb-8a74-8673ea479e70	f
 \.
 
 
@@ -1915,7 +1940,6 @@ COPY public.volunteer (id, callsign, camping, cellar, comment, confirmed, email,
 --
 
 COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
--1	501	1
 -1	502	1
 -1	503	1
 -1	504	1
@@ -2021,7 +2045,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 -1	651	1
 -1	652	1
 -1	653	1
--1	654	1
 -1	655	1
 -1	658	1
 -1	659	1
@@ -2234,7 +2257,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 -1	887	1
 -1	888	1
 -1	889	1
-0	501	1
 0	502	1
 0	503	1
 0	504	1
@@ -2340,7 +2362,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 0	651	1
 0	652	1
 0	653	1
-0	654	1
 0	655	1
 0	658	1
 0	659	1
@@ -2555,7 +2576,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 0	889	1
 1	101	2
 1	151	1
-1	501	1
 1	502	1
 1	503	1
 1	506	1
@@ -2795,7 +2815,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 1	889	2
 2	101	2
 2	151	1
-2	501	1
 2	502	1
 2	503	1
 2	506	1
@@ -3035,7 +3054,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 2	889	2
 3	101	2
 3	151	1
-3	501	1
 3	502	1
 3	503	1
 3	506	1
@@ -3275,7 +3293,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 3	889	2
 4	101	2
 4	151	1
-4	501	1
 4	502	1
 4	503	1
 4	506	1
@@ -3980,7 +3997,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 10	889	1
 11	101	1
 11	151	2
-11	501	1
 11	502	1
 11	503	1
 11	506	1
@@ -4355,7 +4371,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 13	889	1
 14	101	2
 14	151	1
-14	501	1
 14	502	1
 14	503	1
 14	506	1
@@ -4515,7 +4530,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 15	643	1
 15	647	1
 15	653	1
-15	654	2
 15	661	1
 15	665	1
 15	666	1
@@ -4850,7 +4864,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 17	888	1
 17	889	1
 18	151	1
-18	501	2
 18	502	2
 18	503	2
 18	504	2
@@ -5130,7 +5143,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 19	888	1
 19	889	1
 23	151	1
-23	501	2
 23	502	2
 23	503	2
 23	504	2
@@ -5293,7 +5305,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 23	888	2
 23	889	1
 24	151	1
-24	501	2
 24	502	2
 24	503	2
 24	504	2
@@ -5456,7 +5467,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 24	888	2
 24	889	1
 25	151	1
-25	501	2
 25	502	2
 25	503	2
 25	504	2
@@ -5619,7 +5629,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 25	888	2
 25	889	1
 26	151	1
-26	501	2
 26	502	2
 26	503	2
 26	504	2
@@ -5782,7 +5791,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 26	888	2
 26	889	1
 27	151	1
-27	501	2
 27	502	2
 27	503	2
 27	504	2
@@ -5945,7 +5953,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 27	888	2
 27	889	1
 28	151	1
-28	501	2
 28	502	2
 28	503	2
 28	504	2
@@ -6108,7 +6115,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 28	888	2
 28	889	1
 29	151	1
-29	501	2
 29	502	2
 29	503	2
 29	504	2
@@ -6271,7 +6277,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 29	888	2
 29	889	1
 30	151	1
-30	501	2
 30	502	2
 30	503	2
 30	504	2
@@ -6433,7 +6438,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 30	887	1
 30	888	2
 30	889	1
-38	501	1
 38	502	1
 38	503	1
 38	504	1
@@ -6539,7 +6543,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 38	651	1
 38	652	1
 38	653	1
-38	654	1
 38	655	1
 38	658	1
 38	659	1
@@ -6854,7 +6857,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 40	888	1
 40	889	1
 41	151	1
-41	501	2
 41	502	2
 41	503	2
 41	504	2
@@ -7016,7 +7018,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 41	887	1
 41	888	2
 41	889	1
-99	501	1
 99	502	1
 99	503	1
 99	504	1
@@ -7122,7 +7123,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 99	651	1
 99	652	1
 99	653	1
-99	654	1
 99	655	1
 99	658	1
 99	659	1
@@ -7334,29 +7334,26 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 99	887	1
 99	888	1
 99	889	1
-0	1751	1
--1	1751	1
-4	1751	2
-1	1751	2
-2	1751	2
-3	1751	2
-9	1751	1
-10	1751	2
-0	1801	1
--1	1801	1
 -1	1851	1
 0	1851	1
-0	1901	1
--1	1901	1
-4	1901	1
-3	1901	1
-14	1901	2
-2	1901	1
-8	1901	2
-1	1901	1
-14	1751	2
--1	1951	1
-0	1951	1
+26	2001	2
+25	2001	2
+2	2001	1
+18	2001	2
+3	2001	1
+-1	2001	1
+19	2001	1
+23	2001	2
+30	2001	2
+41	2001	2
+27	2001	2
+4	2001	1
+0	2001	1
+24	2001	2
+29	2001	2
+28	2001	2
+1	2001	1
+14	2001	2
 \.
 
 
@@ -7365,7 +7362,6 @@ COPY public.volunteer_area (areaid, volunteerid, preference) FROM stdin;
 --
 
 COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, sessionid, volunteerid, areaid) FROM stdin;
-\N	\N	f	\N	0	f	0	501	27
 \N	\N	f	\N	0	f	0	502	25
 \N	\N	f	\N	0	f	0	504	30
 \N	\N	f	\N	0	f	0	505	38
@@ -7409,7 +7405,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	0	873	30
 \N	\N	f	\N	0	f	0	874	99
 \N	\N	f	\N	0	f	0	878	30
-\N	\N	f	\N	0	f	1	501	27
 \N	\N	f	\N	0	f	1	502	25
 \N	\N	f	\N	0	f	1	504	30
 \N	\N	f	\N	0	f	1	505	38
@@ -7456,7 +7451,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	1	874	99
 \N	\N	f	\N	0	f	1	875	38
 \N	\N	f	\N	0	f	1	878	30
-\N	\N	f	\N	0	f	2	501	38
 \N	\N	f	\N	0	f	2	502	38
 \N	\N	f	\N	0	f	2	504	30
 \N	\N	f	\N	0	f	2	505	30
@@ -7497,7 +7491,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	3	561	14
 \N	\N	f	\N	0	f	3	762	14
 \N	\N	f	\N	0	f	3	806	-1
-\N	\N	f	\N	0	f	10	501	27
 \N	\N	f	\N	0	f	10	502	38
 \N	\N	f	\N	0	f	10	504	30
 \N	\N	f	\N	0	f	10	505	30
@@ -7542,7 +7535,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	10	873	30
 \N	\N	f	\N	0	f	10	874	99
 \N	\N	f	\N	0	f	10	878	30
-\N	\N	f	\N	0	f	11	501	27
 \N	\N	f	\N	0	f	11	502	25
 \N	\N	f	\N	0	f	11	504	30
 \N	\N	f	\N	0	f	11	505	30
@@ -7595,7 +7587,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	12	507	30
 \N	\N	f	\N	0	f	12	561	14
 \N	\N	f	\N	0	f	12	762	14
-\N	\N	f	\N	0	f	20	501	27
 \N	\N	f	\N	0	f	20	502	25
 \N	\N	f	\N	0	f	20	504	30
 \N	\N	f	\N	0	f	20	505	30
@@ -7641,9 +7632,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	20	874	99
 \N	\N	f	\N	0	f	20	875	38
 \N	\N	f	\N	0	f	20	878	30
-\N	\N	f	\N	0	f	20	883	-1
-\N	\N	f	\N	0	f	20	886	-1
-\N	\N	f	\N	0	f	21	501	27
 \N	\N	f	\N	0	f	21	502	25
 \N	\N	f	\N	0	f	21	504	30
 \N	\N	f	\N	0	f	21	505	30
@@ -7687,7 +7675,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	21	753	8
 \N	\N	f	\N	0	f	21	758	38
 \N	\N	f	\N	0	f	21	786	38
-\N	\N	f	\N	0	f	21	806	-1
 \N	\N	f	\N	0	f	21	812	38
 "Hello Angela"	\N	f	\N	0	f	21	820	28
 \N	\N	f	\N	0	f	21	825	8
@@ -7702,14 +7689,11 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	21	873	30
 \N	\N	f	\N	0	f	21	874	99
 \N	\N	f	\N	0	f	21	878	30
-\N	\N	f	\N	0	f	21	883	-1
-\N	\N	f	\N	0	f	21	886	-1
 \N	\N	f	\N	0	f	22	504	30
 \N	\N	f	\N	0	f	22	507	30
 \N	\N	f	\N	0	f	22	561	14
 \N	\N	f	\N	0	f	22	662	14
 \N	\N	f	\N	0	f	22	762	14
-\N	\N	f	\N	0	f	30	501	27
 \N	\N	f	\N	0	f	30	502	25
 \N	\N	f	\N	0	f	30	503	18
 \N	\N	f	\N	0	f	30	504	30
@@ -7738,7 +7722,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	30	648	28
 \N	\N	f	\N	0	f	30	649	38
 \N	\N	f	\N	0	f	30	653	28
-\N	\N	f	\N	0	f	30	654	38
 \N	\N	f	\N	0	f	30	665	28
 \N	\N	f	\N	0	f	30	668	9
 \N	\N	f	\N	0	f	30	669	9
@@ -7771,6 +7754,11 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	30	826	24
 \N	\N	f	\N	0	f	30	843	2
 \N	\N	f	\N	0	f	30	844	8
+\N	\N	f	\N	0	f	20	883	1
+\N	\N	f	\N	0	f	21	883	1
+\N	\N	f	\N	0	f	20	886	1
+\N	\N	f	\N	0	f	21	806	8
+\N	\N	f	\N	0	f	21	886	1
 \N	\N	f	\N	0	f	30	845	38
 \N	\N	f	\N	0	f	30	846	0
 \N	\N	f	\N	0	f	30	849	14
@@ -7782,9 +7770,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	30	873	30
 \N	\N	f	\N	0	f	30	874	99
 \N	\N	f	\N	0	f	30	878	30
-\N	\N	f	\N	0	f	30	880	-1
-\N	\N	f	\N	0	f	30	883	-1
-\N	\N	f	\N	0	f	31	501	27
 \N	\N	f	\N	0	f	31	502	25
 \N	\N	f	\N	0	f	31	503	18
 \N	\N	f	\N	0	f	31	504	30
@@ -7848,7 +7833,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	31	651	4
 \N	\N	f	\N	0	f	31	652	2
 \N	\N	f	\N	0	f	31	653	1
-\N	\N	f	\N	0	f	31	654	15
 \N	\N	f	\N	0	f	31	655	11
 \N	\N	f	\N	0	f	31	661	2
 \N	\N	f	\N	0	f	31	665	28
@@ -7932,13 +7916,9 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	31	871	30
 \N	\N	f	\N	0	f	31	873	30
 \N	\N	f	\N	0	f	31	874	99
-\N	\N	f	\N	0	f	31	877	-1
 \N	\N	f	\N	0	f	31	878	30
 \N	\N	f	\N	0	f	31	879	9
-\N	\N	f	\N	0	f	31	880	-1
 \N	\N	f	\N	0	f	31	882	-1
-\N	\N	f	\N	0	f	31	889	-1
-\N	\N	f	\N	0	f	32	501	27
 \N	\N	f	\N	0	f	32	502	25
 \N	\N	f	\N	0	f	32	503	18
 \N	\N	f	\N	0	f	32	504	30
@@ -8042,6 +8022,8 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	32	818	4
 "Hello Angela"	\N	f	\N	0	f	32	820	28
 \N	\N	f	\N	0	f	32	827	4
+\N	\N	f	\N	0	f	31	880	14
+\N	\N	f	\N	0	f	31	877	1
 \N	\N	f	\N	0	f	32	830	14
 \N	\N	f	\N	0	f	32	843	2
 \N	\N	f	\N	0	f	32	844	1
@@ -8061,7 +8043,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	33	561	14
 \N	\N	f	\N	0	f	33	662	14
 \N	\N	f	\N	0	f	33	762	14
-\N	\N	f	\N	0	f	39	501	27
 \N	\N	f	\N	0	f	39	502	25
 \N	\N	f	\N	0	f	39	503	18
 \N	\N	f	\N	0	f	39	504	30
@@ -8113,7 +8094,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	39	651	38
 \N	\N	f	\N	0	f	39	652	2
 \N	\N	f	\N	0	f	39	653	1
-\N	\N	f	\N	0	f	39	654	15
 \N	\N	f	\N	0	f	39	655	38
 \N	\N	f	\N	0	f	39	665	28
 \N	\N	f	\N	0	f	39	667	4
@@ -8143,7 +8123,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	39	718	14
 "Go to wine bar!"	\N	f	\N	0	t	39	720	10
 \N	\N	f	\N	0	f	39	724	8
-\N	\N	f	\N	0	f	39	725	15
 \N	\N	f	\N	0	f	39	728	15
 \N	\N	f	\N	0	f	39	734	11
 \N	\N	f	\N	0	f	39	735	3
@@ -8189,13 +8168,8 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	39	871	30
 \N	\N	f	\N	0	f	39	873	30
 \N	\N	f	\N	0	f	39	874	99
-\N	\N	f	\N	0	f	39	877	-1
 \N	\N	f	\N	0	f	39	878	30
 \N	\N	f	\N	0	f	39	879	38
-\N	\N	f	\N	0	f	39	882	-1
-\N	\N	f	\N	0	f	39	887	-1
-\N	\N	f	\N	0	f	39	889	-1
-\N	\N	f	\N	0	t	40	501	27
 \N	\N	f	\N	0	f	40	502	25
 \N	\N	f	\N	0	f	40	504	28
 \N	\N	f	\N	0	f	40	505	30
@@ -8280,7 +8254,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	40	719	8
 \N	\N	f	\N	0	f	40	720	14
 \N	\N	f	\N	0	f	40	724	8
-\N	\N	f	\N	0	f	40	725	15
 \N	\N	f	\N	0	f	40	726	1
 \N	\N	f	\N	0	f	40	727	3
 \N	\N	f	\N	0	f	40	728	15
@@ -8312,6 +8285,10 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	40	778	14
 \N	\N	f	\N	0	f	40	779	14
 \N	\N	f	\N	0	f	40	780	3
+	\N	t	\N	0	f	40	725	15
+\N	\N	f	\N	0	f	39	889	4
+\N	\N	f	\N	0	f	39	877	1
+\N	\N	f	\N	0	f	39	882	38
 \N	\N	f	\N	0	f	40	782	12
 \N	\N	f	\N	0	f	40	786	15
 \N	\N	f	\N	0	f	40	792	10
@@ -8329,7 +8306,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	40	821	1
 \N	\N	f	\N	0	f	40	823	4
 \N	\N	f	\N	0	f	40	824	16
-\N	\N	f	\N	0	f	40	831	-1
 \N	\N	f	\N	0	f	40	832	2
 \N	\N	f	\N	0	f	40	839	2
 \N	\N	f	\N	0	f	40	843	2
@@ -8344,14 +8320,9 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	40	873	30
 \N	\N	f	\N	0	f	40	874	99
 \N	\N	f	\N	0	f	40	879	9
-\N	\N	f	\N	0	f	40	880	-1
 \N	\N	f	\N	0	f	40	881	-1
 \N	\N	f	\N	0	f	40	882	-1
-\N	\N	f	\N	0	f	40	883	-1
 \N	\N	f	\N	0	f	40	884	-1
-\N	\N	f	\N	0	f	40	888	-1
-\N	\N	f	\N	0	f	40	889	-1
-\N	\N	f	\N	0	t	41	501	25
 \N	\N	f	\N	0	f	41	502	25
 \N	\N	f	\N	0	f	41	504	28
 \N	\N	f	\N	0	f	41	506	25
@@ -8414,7 +8385,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	41	649	11
 \N	\N	f	\N	0	f	41	651	4
 \N	\N	f	\N	0	f	41	653	1
-\N	\N	f	\N	0	f	41	654	15
 \N	\N	f	\N	0	f	41	661	2
 \N	\N	f	\N	0	f	41	663	3
 \N	\N	f	\N	0	f	41	665	28
@@ -8446,6 +8416,11 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	41	740	10
 \N	\N	f	\N	0	f	41	749	2
 \N	\N	f	\N	0	f	41	750	4
+\N	\N	f	\N	0	f	40	889	1
+\N	\N	f	\N	0	f	40	888	1
+\N	\N	f	\N	0	f	40	880	14
+\N	\N	f	\N	0	f	40	831	30
+\N	\N	f	\N	0	f	40	883	1
 \N	\N	f	\N	0	f	41	751	8
 \N	\N	f	\N	0	f	41	753	8
 \N	\N	f	\N	0	f	41	757	4
@@ -8503,8 +8478,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	41	879	9
 \N	\N	f	\N	0	f	41	881	-1
 \N	\N	f	\N	0	f	41	884	-1
-\N	\N	f	\N	0	f	41	889	-1
-\N	\N	f	\N	0	t	42	501	27
 \N	\N	f	\N	0	f	42	502	25
 \N	\N	f	\N	0	f	42	504	30
 \N	\N	f	\N	0	f	42	505	30
@@ -8526,7 +8499,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	42	569	15
 \N	\N	f	\N	0	f	42	573	14
 \N	\N	f	\N	0	f	42	578	14
-\N	\N	f	\N	0	f	42	581	4
 \N	\N	f	\N	0	f	42	582	2
 \N	\N	f	\N	0	f	42	583	14
 \N	\N	f	\N	0	f	42	585	14
@@ -8560,7 +8532,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	42	648	28
 \N	\N	f	\N	0	f	42	649	11
 \N	\N	f	\N	0	f	42	653	1
-\N	\N	f	\N	0	f	42	654	15
 \N	\N	f	\N	0	f	42	663	1
 \N	\N	f	\N	0	f	42	664	3
 \N	\N	f	\N	0	f	42	665	28
@@ -8582,6 +8553,7 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	42	718	14
 \N	\N	f	\N	0	f	42	720	14
 \N	\N	f	\N	0	f	42	722	2
+\N	\N	f	\N	0	f	41	889	2
 \N	\N	f	\N	0	f	42	723	10
 \N	\N	f	\N	0	f	42	724	8
 \N	\N	f	\N	0	f	42	728	15
@@ -8619,7 +8591,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	42	827	4
 \N	\N	f	\N	0	f	42	828	9
 \N	\N	f	\N	0	f	42	830	14
-\N	\N	f	\N	0	f	42	831	-1
 \N	\N	f	\N	0	f	42	832	2
 \N	\N	f	\N	0	f	42	837	3
 \N	\N	f	\N	0	f	42	839	4
@@ -8644,7 +8615,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	42	878	30
 \N	\N	f	\N	0	f	42	879	9
 \N	\N	f	\N	0	f	42	881	-1
-\N	\N	f	\N	0	t	43	501	27
 \N	\N	f	\N	0	f	43	502	25
 \N	\N	f	\N	0	f	43	504	28
 \N	\N	f	\N	0	f	43	505	30
@@ -8661,7 +8631,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	43	569	15
 \N	\N	f	\N	0	f	43	573	14
 \N	\N	f	\N	0	f	43	578	14
-\N	\N	f	\N	0	f	43	581	1
 \N	\N	f	\N	0	f	43	582	2
 \N	\N	f	\N	0	f	43	583	14
 \N	\N	f	\N	0	f	43	585	14
@@ -8691,7 +8660,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	43	648	28
 \N	\N	f	\N	0	f	43	649	11
 \N	\N	f	\N	0	f	43	653	1
-\N	\N	f	\N	0	f	43	654	15
 \N	\N	f	\N	0	f	43	664	4
 \N	\N	f	\N	0	f	43	665	28
 \N	\N	f	\N	0	f	43	668	9
@@ -8740,7 +8708,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	43	821	1
 \N	\N	f	\N	0	f	43	827	4
 \N	\N	f	\N	0	f	43	828	9
-\N	\N	f	\N	0	f	43	831	-1
 \N	\N	f	\N	0	f	43	840	14
 \N	\N	f	\N	0	f	43	841	9
 \N	\N	f	\N	0	f	43	843	2
@@ -8762,7 +8729,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	44	561	14
 \N	\N	f	\N	0	f	44	662	14
 \N	\N	f	\N	0	f	44	762	14
-\N	\N	f	\N	0	f	50	501	27
 \N	\N	f	\N	0	f	50	502	25
 \N	\N	f	\N	0	f	50	504	28
 \N	\N	f	\N	0	f	50	505	30
@@ -8819,7 +8785,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	50	649	11
 \N	\N	f	\N	0	f	50	652	2
 \N	\N	f	\N	0	f	50	653	1
-\N	\N	f	\N	0	f	50	654	15
 \N	\N	f	\N	0	f	50	658	2
 \N	\N	f	\N	0	f	50	660	1
 \N	\N	f	\N	0	f	50	663	2
@@ -8884,7 +8849,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	50	825	1
 \N	\N	f	\N	0	f	50	829	0
 \N	\N	f	\N	0	f	50	830	14
-\N	\N	f	\N	0	f	50	831	-1
 \N	\N	f	\N	0	f	50	836	4
 \N	\N	f	\N	0	f	50	840	14
 \N	\N	f	\N	0	f	50	843	2
@@ -8900,9 +8864,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	50	874	99
 \N	\N	f	\N	0	f	50	878	30
 \N	\N	f	\N	0	f	50	879	9
-\N	\N	f	\N	0	f	50	880	-1
-\N	\N	f	\N	0	f	50	888	-1
-\N	\N	f	\N	0	f	51	501	27
 \N	\N	f	\N	0	f	51	502	25
 \N	\N	f	\N	0	f	51	504	30
 \N	\N	f	\N	0	f	51	505	30
@@ -8960,7 +8921,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	51	649	11
 \N	\N	f	\N	0	f	51	651	4
 \N	\N	f	\N	0	f	51	653	1
-\N	\N	f	\N	0	f	51	654	15
 \N	\N	f	\N	0	f	51	661	1
 \N	\N	f	\N	0	f	51	663	4
 \N	\N	f	\N	0	f	51	664	2
@@ -8990,6 +8950,8 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	51	728	15
 \N	\N	f	\N	0	f	51	731	15
 \N	\N	f	\N	0	f	51	732	15
+\N	\N	f	\N	0	f	50	880	14
+\N	\N	f	\N	0	f	50	831	30
 \N	\N	f	\N	0	f	51	739	1
 \N	\N	f	\N	0	f	51	741	2
 \N	\N	f	\N	0	f	51	748	28
@@ -9041,9 +9003,7 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	51	874	99
 \N	\N	f	\N	0	f	51	878	30
 \N	\N	f	\N	0	f	51	879	9
-\N	\N	f	\N	0	f	51	883	-1
 \N	\N	f	\N	0	f	51	884	-1
-\N	\N	f	\N	0	f	52	501	27
 \N	\N	f	\N	0	f	52	502	25
 \N	\N	f	\N	0	f	52	504	30
 \N	\N	f	\N	0	f	52	505	30
@@ -9110,7 +9070,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	52	721	2
 \N	\N	f	\N	0	f	52	723	12
 \N	\N	f	\N	0	f	52	724	8
-\N	\N	f	\N	0	f	52	725	15
 \N	\N	f	\N	0	f	52	728	15
 \N	\N	f	\N	0	f	52	731	15
 \N	\N	f	\N	0	f	52	732	15
@@ -9126,6 +9085,7 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	52	773	28
 \N	\N	f	\N	0	f	52	774	14
 \N	\N	f	\N	0	f	52	775	8
+\N	\N	f	\N	0	f	51	883	1
 \N	\N	f	\N	0	f	52	776	8
 \N	\N	f	\N	0	f	52	778	14
 \N	\N	f	\N	0	f	52	779	14
@@ -9140,7 +9100,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	52	827	3
 \N	\N	f	\N	0	f	52	828	9
 \N	\N	f	\N	0	f	52	830	14
-\N	\N	f	\N	0	f	52	831	-1
 \N	\N	f	\N	0	f	52	836	4
 \N	\N	f	\N	0	f	52	840	14
 \N	\N	f	\N	0	f	52	843	2
@@ -9160,8 +9119,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	52	874	99
 \N	\N	f	\N	0	f	52	878	30
 \N	\N	f	\N	0	f	52	879	9
-\N	\N	f	\N	0	f	52	885	-1
-\N	\N	f	\N	0	f	53	501	27
 \N	\N	f	\N	0	f	53	502	25
 \N	\N	f	\N	0	f	53	504	30
 \N	\N	f	\N	0	f	53	505	30
@@ -9241,7 +9198,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	53	821	1
 \N	\N	f	\N	0	f	53	827	3
 \N	\N	f	\N	0	f	53	828	9
-\N	\N	f	\N	0	f	53	831	-1
 \N	\N	f	\N	0	f	53	834	11
 \N	\N	f	\N	0	f	53	836	4
 \N	\N	f	\N	0	f	53	840	14
@@ -9261,8 +9217,9 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	54	504	30
 \N	\N	f	\N	0	f	54	561	14
 \N	\N	f	\N	0	f	54	662	14
+\N	\N	f	\N	0	f	53	831	30
+\N	\N	f	\N	0	f	52	885	1
 \N	\N	f	\N	0	f	54	762	14
-\N	\N	f	\N	0	f	60	501	27
 \N	\N	f	\N	0	f	60	502	25
 \N	\N	f	\N	0	f	60	504	27
 \N	\N	f	\N	0	f	60	505	30
@@ -9362,7 +9319,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	60	827	2
 \N	\N	f	\N	0	f	60	828	9
 \N	\N	f	\N	0	f	60	830	14
-\N	\N	f	\N	0	f	60	831	-1
 \N	\N	f	\N	0	f	60	834	4
 \N	\N	f	\N	0	f	60	836	2
 \N	\N	f	\N	0	f	60	840	14
@@ -9377,7 +9333,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	60	874	99
 \N	\N	f	\N	0	f	60	878	30
 \N	\N	f	\N	0	f	60	879	9
-\N	\N	f	\N	0	f	61	501	27
 \N	\N	f	\N	0	f	61	502	25
 \N	\N	f	\N	0	f	61	504	27
 \N	\N	f	\N	0	f	61	505	30
@@ -9420,7 +9375,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	61	648	28
 \N	\N	f	\N	0	f	61	649	11
 \N	\N	f	\N	0	f	61	653	1
-\N	\N	f	\N	0	f	61	654	15
 \N	\N	f	\N	0	f	61	668	9
 \N	\N	f	\N	0	f	61	669	9
 \N	\N	f	\N	0	f	61	671	2
@@ -9477,7 +9431,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	61	827	2
 \N	\N	f	\N	0	f	61	828	9
 \N	\N	f	\N	0	f	61	830	14
-\N	\N	f	\N	0	f	61	831	-1
 \N	\N	f	\N	0	f	61	836	3
 \N	\N	f	\N	0	f	61	840	14
 \N	\N	f	\N	0	f	61	843	2
@@ -9490,8 +9443,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	61	874	99
 \N	\N	f	\N	0	f	61	878	30
 \N	\N	f	\N	0	f	61	879	9
-\N	\N	f	\N	0	f	61	883	-1
-\N	\N	f	\N	0	f	62	501	38
 \N	\N	f	\N	0	f	62	502	25
 \N	\N	f	\N	0	f	62	504	30
 \N	\N	f	\N	0	f	62	505	30
@@ -9531,6 +9482,7 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	62	753	8
 \N	\N	f	\N	0	f	62	755	38
 \N	\N	f	\N	0	f	62	758	14
+\N	\N	f	\N	0	f	61	883	1
 \N	\N	f	\N	0	f	62	763	25
 \N	\N	f	\N	0	f	62	773	28
 \N	\N	f	\N	0	f	62	786	38
@@ -9538,7 +9490,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	62	795	8
 \N	\N	f	\N	0	f	62	814	14
 "Hello Angela"	\N	f	\N	0	f	62	820	28
-\N	\N	f	\N	0	f	62	831	-1
 \N	\N	f	\N	0	f	62	840	14
 \N	\N	f	\N	0	f	62	843	2
 \N	\N	f	\N	0	f	62	844	38
@@ -9549,7 +9500,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	63	504	30
 \N	\N	f	\N	0	f	63	507	30
 \N	\N	f	\N	0	f	63	662	14
-\N	\N	f	\N	0	f	71	501	38
 \N	\N	f	\N	0	f	71	502	38
 \N	\N	f	\N	0	f	71	504	30
 \N	\N	f	\N	0	f	71	505	30
@@ -9583,7 +9533,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	71	814	14
 "Hello Angela"	\N	f	\N	0	f	71	820	28
 \N	\N	f	\N	0	f	71	830	38
-\N	\N	f	\N	0	f	71	831	-1
 \N	\N	f	\N	0	f	71	840	38
 \N	\N	f	\N	0	f	71	844	38
 \N	\N	f	\N	0	f	71	849	14
@@ -9593,8 +9542,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	71	873	30
 \N	\N	f	\N	0	f	71	874	99
 \N	\N	f	\N	0	f	71	878	30
-\N	\N	f	\N	0	f	71	880	-1
-\N	\N	f	\N	0	f	72	501	38
 \N	\N	f	\N	0	f	72	502	38
 \N	\N	f	\N	0	f	72	504	30
 \N	\N	f	\N	0	f	72	505	30
@@ -9619,7 +9566,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	72	814	14
 "Hello Angela"	\N	f	\N	0	f	72	820	28
 \N	\N	f	\N	0	f	72	830	38
-\N	\N	f	\N	0	f	72	831	-1
 \N	\N	f	\N	0	f	72	844	38
 \N	\N	f	\N	0	f	72	849	14
 \N	\N	f	\N	0	f	72	868	30
@@ -9628,7 +9574,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	72	873	30
 \N	\N	f	\N	0	f	72	874	99
 \N	\N	f	\N	0	f	72	878	30
-\N	\N	f	\N	0	f	73	501	38
 \N	\N	f	\N	0	f	73	504	30
 \N	\N	f	\N	0	f	73	505	30
 \N	\N	f	\N	0	f	73	506	38
@@ -9654,7 +9599,6 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	73	878	30
 \N	\N	f	\N	0	f	74	504	30
 \N	\N	f	\N	0	f	74	507	30
-\N	\N	f	\N	0	f	80	501	38
 \N	\N	f	\N	0	f	80	504	30
 \N	\N	f	\N	0	f	80	505	30
 \N	\N	f	\N	0	f	80	506	38
@@ -9666,6 +9610,9 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	80	589	38
 \N	\N	f	\N	0	f	80	599	14
 \N	\N	f	\N	0	f	80	684	38
+\N	\N	f	\N	0	f	62	831	30
+\N	\N	f	\N	0	f	71	831	30
+\N	\N	f	\N	0	f	72	831	30
 \N	\N	f	\N	0	f	80	698	38
 \N	\N	f	\N	0	f	80	707	38
 \N	\N	f	\N	0	f	80	814	38
@@ -9685,13 +9632,38 @@ COPY public.volunteer_session (comment, finish, locked, start, tokens, worked, s
 \N	\N	f	\N	0	f	81	870	30
 \N	\N	f	\N	0	f	81	878	30
 	\N	f	\N	0	f	41	720	13
-	\N	f	\N	0	f	51	1751	2
-	\N	f	\N	0	f	60	1751	4
-	\N	f	\N	0	f	50	1751	10
-\N	\N	f	\N	0	f	61	1751	-1
-\N	\N	f	\N	0	f	52	1751	-1
+\N	\N	f	\N	0	f	43	2001	27
+\N	\N	f	\N	0	f	50	2001	27
+\N	\N	f	\N	0	f	51	2001	27
+\N	\N	f	\N	0	f	52	2001	27
+\N	\N	f	\N	0	f	53	2001	27
+\N	\N	f	\N	0	f	60	2001	27
+\N	\N	f	\N	0	f	61	2001	27
+\N	\N	f	\N	0	f	62	2001	27
+\N	\N	f	\N	0	f	71	2001	27
+\N	\N	f	\N	0	f	72	2001	27
+\N	\N	f	\N	0	f	20	2001	-1
 	\N	f	\N	0	f	30	711	10
 	\N	f	\N	0	f	40	590	14
+	\N	t	\N	0	f	39	725	15
+	\N	t	\N	0	f	52	725	15
+\N	\N	f	\N	0	f	31	889	4
+\N	\N	f	\N	0	f	50	888	1
+\N	\N	f	\N	0	f	39	887	2
+\N	\N	f	\N	0	f	30	880	14
+\N	\N	f	\N	0	f	71	880	14
+\N	\N	f	\N	0	f	42	831	30
+\N	\N	f	\N	0	f	43	831	30
+\N	\N	f	\N	0	f	52	831	30
+\N	\N	f	\N	0	f	60	831	30
+\N	\N	f	\N	0	f	61	831	30
+\N	\N	f	\N	0	f	30	883	1
+\N	\N	t	\N	0	f	42	581	2
+\N	\N	f	\N	0	f	43	581	4
+\N	\N	f	\N	0	f	32	2001	27
+\N	\N	f	\N	0	f	40	2001	27
+\N	\N	f	\N	0	f	41	2001	27
+\N	\N	f	\N	0	f	42	2001	27
 \.
 
 
@@ -9768,7 +9740,7 @@ ALTER TABLE ONLY public.volunteer_session
 
 
 --
--- Name: assigned_counts _RETURN; Type: RULE; Schema: public; Owner: nick
+-- Name: assigned_counts _RETURN; Type: RULE; Schema: public; Owner: staffing
 --
 
 CREATE RULE "_RETURN" AS

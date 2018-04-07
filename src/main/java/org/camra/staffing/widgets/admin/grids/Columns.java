@@ -13,6 +13,18 @@ public class Columns {
 
     }
 
+    public static String getYes() {
+        return Columns.getIconCode("#0a0", VaadinIcons.CHECK_SQUARE);
+    }
+
+    public static String getNo() {
+        return Columns.getIconCode("#faa", VaadinIcons.CLOSE_CIRCLE_O);
+    }
+
+    public static String getUndefined() {
+        return Columns.getIconCode("#777", VaadinIcons.CIRCLE_THIN);
+    }
+
     public static String formatRatio(int top, int bottom) {
         String text = top+" / "+bottom;
         return getIconCode(getColor(top, bottom), VaadinIcons.CIRCLE) + " " + text;

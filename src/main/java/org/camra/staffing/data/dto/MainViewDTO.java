@@ -11,16 +11,22 @@ public class MainViewDTO {
 
     private int id;
     private int volunteerId;
-    private String forename;
-    private String surname;
+    private String volunteerName;
     private int sessionId;
     private String sessionName;
     private int areaId;
     private String areaName;
+    private boolean yesArea;
+    private int currentAreaId;
+    private String currentAreaName;
     private boolean current;
     private int assigned;
     private int worked;
     private int required;
+    private boolean locked;
+    private boolean volunteerWorked;
+    private int tokens;
+    private String comment;
 
     public static MainViewDTO create(MainView mainView) {
         MainViewDTO dto = new MainViewDTO();

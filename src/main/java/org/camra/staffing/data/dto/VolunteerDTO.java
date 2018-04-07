@@ -52,6 +52,7 @@ public class VolunteerDTO {
     public void removeSession(int sessionId) {
         if (sessions.contains(sessionId)) {
             sessionsToRemove.add(sessionId);
+            sessions.remove(sessionId);
         }
     }
 

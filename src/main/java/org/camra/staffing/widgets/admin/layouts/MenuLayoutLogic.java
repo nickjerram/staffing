@@ -1,10 +1,12 @@
 package org.camra.staffing.widgets.admin.layouts;
 
 import com.vaadin.icons.VaadinIcons;
+import com.vaadin.navigator.View;
 import com.vaadin.server.Resource;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.Component;
 import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.themes.ValoTheme;
 import org.camra.staffing.ui.AdminUI;
@@ -12,11 +14,16 @@ import org.camra.staffing.widgets.admin.views.SessionView;
 import org.camra.staffing.widgets.admin.views.StaffingView;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @SpringComponent
 @UIScope
 public class MenuLayoutLogic extends MenuLayout {
 
     @Autowired private AdminUI adminUI;
+
+    private Map<String,Button> menuButtons = new HashMap<>();
 
     public MenuLayoutLogic() {
         MenuBar logoutMenu = new MenuBar();
@@ -30,12 +37,21 @@ public class MenuLayoutLogic extends MenuLayout {
     }
 
     public void addVolunteerMenuItem(Resource icon, StaffingView view, boolean defaultView) {
-        volunteerMenuItems.addComponent(createButton(icon, view.getName()));
+        Button button = createButton(icon, view.getName());
+        menuButtons.put(view.getName(), button);
+        volunteerMenuItems.addComponent(button);
 
         adminUI.getNavigator().addView(view.getName(), view);
         if (defaultView) {
             adminUI.getNavigator().addView("", view);
         }
+    }
+
+    public void removeVolunteerMenuItem(StaffingView view) {
+        Button buttonToRemove = menuButtons.get(view.getName());
+        volunteerMenuItems.removeComponent(buttonToRemove);
+        adminUI.getNavigator().removeView(view.getName());
+        adminUI.getNavigator().navigateTo("Volunteers");
     }
 
     public void addSessionMenuItem(Resource icon, SessionView view) {

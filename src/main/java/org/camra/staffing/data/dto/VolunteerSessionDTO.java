@@ -38,6 +38,14 @@ public class VolunteerSessionDTO {
     private int tokensDue;
     private String summaryTokensDue;
 
+    public VolunteerSessionDTO() {}
+
+    public VolunteerSessionDTO(MainViewDTO mainViewDTO) {
+        this.volunteerId = mainViewDTO.getVolunteerId();
+        this.sessionId = mainViewDTO.getSessionId();
+        this.areaId = mainViewDTO.getCurrentAreaId();
+    }
+
     public static VolunteerSessionDTO create(VolunteerSessionView vs) {
         VolunteerSessionDTO dto = new VolunteerSessionDTO();
         BeanUtils.copyProperties(vs, dto);

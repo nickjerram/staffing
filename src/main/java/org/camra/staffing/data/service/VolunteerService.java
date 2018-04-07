@@ -48,12 +48,9 @@ public class VolunteerService {
                 .map(VolunteerDTO::create);
     }
 
-    public int countRecords(Query<VolunteerDTO,Example<Volunteer>> query) {
-        if (query.getFilter().isPresent()) {
-            return (int) volunteerRepository.count(query.getFilter().get());
-        } else {
-            return (int) volunteerRepository.count();
-        }
+    public void deleteVolunteer(VolunteerDTO dto) {
+        Volunteer toDelete = volunteerRepository.findOne(dto.getId());
+        volunteerRepository.delete(toDelete);
     }
 
     public List<AreaSelectorDTO> getAreaSelectors(Integer volunteerId) {

@@ -1,5 +1,6 @@
 package org.camra.staffing.data.provider;
 
+import org.camra.staffing.data.specification.BooleanCriterion;
 import org.camra.staffing.data.specification.RatioCriterion;
 import org.camra.staffing.data.specification.StringCriterion;
 import org.springframework.data.domain.Sort;
@@ -11,7 +12,9 @@ import com.vaadin.shared.data.sort.SortDirection;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.domain.Specifications;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -19,26 +22,46 @@ public abstract class SortableDataProvider<DTO,E> extends AbstractBackEndDataPro
 
     Map<String,Specification<E>> specificationMap = new HashMap<>();
 
+    protected Sort doSortQuery(Query<DTO, String> query) {
+        return doSortQuery(query, new ArrayList<>());
+    }
+
     /**
-     * Convert Vaadin Sort query into Spring JPA Sort
+     * Convert Vaadin Sort query into Spring JPA Sort, using the default sorting if no sorting is specified in the query
      * @param query
      * @return
      */
-    protected Sort doSortQuery(Query<DTO, String> query) {
+    protected Sort doSortQuery(Query<DTO, String> query, List<QuerySortOrder> defaultSorting) {
         Sort sort = null;
+        List<QuerySortOrder> sortOrders = new ArrayList<>();
+        if (query.getSortOrders().isEmpty()) {
+            sortOrders.addAll(defaultSorting);
+        } else {
+            sortOrders.addAll(query.getSortOrders());
+        }
 
-        for (QuerySortOrder order : query.getSortOrders()) {
-            String field = order.getSorted();
-            field = field.contains(".") ? field.split("\\.")[1] : field;
-            SortDirection direction = order.getDirection();
-            boolean asc = direction==SortDirection.ASCENDING;
+        for (QuerySortOrder order : sortOrders) {
+            Sort sortSpecification = createSortCriterion(order);
             if (sort==null) {
-                sort = new Sort(asc ? Sort.Direction.ASC : Sort.Direction.DESC, field);
+                sort = sortSpecification;
             } else {
-                sort = sort.and(new Sort(asc ? Sort.Direction.ASC : Sort.Direction.DESC, field));
+                sort = sort.and(sortSpecification);
             }
         }
         return sort;
+    }
+
+    /**
+     * Convert a Vaadin sort specification into a Spring JPA sort specification
+     * @param order
+     * @return
+     */
+    private Sort createSortCriterion(QuerySortOrder order) {
+        String field = order.getSorted();
+        field = field.contains(".") ? field.split("\\.")[1] : field;
+        SortDirection direction = order.getDirection();
+        boolean asc = direction==SortDirection.ASCENDING;
+        return new Sort(asc ? Sort.Direction.ASC : Sort.Direction.DESC, field);
     }
 
     public void addStringFilter(String columnId, String filter) {
@@ -50,6 +73,12 @@ public abstract class SortableDataProvider<DTO,E> extends AbstractBackEndDataPro
     public void addRatioFilter(String columnId, String topProperty, String bottomProperty, String ratioProperty, String expression) {
         RatioCriterion<E> criterion = new RatioCriterion<>(topProperty, bottomProperty, ratioProperty);
         criterion.setFilter(expression);
+        specificationMap.put(columnId, criterion);
+        refreshAll();
+    }
+
+    public void addBooleanFilter(String columnId, BooleanCriterion.State state) {
+        BooleanCriterion<E> criterion = new BooleanCriterion<>(columnId, state);
         specificationMap.put(columnId, criterion);
         refreshAll();
     }

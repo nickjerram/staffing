@@ -3,6 +3,7 @@ package org.camra.staffing.widgets.admin.grids;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
+import com.vaadin.ui.Grid;
 import com.vaadin.ui.renderers.HtmlRenderer;
 import com.vaadin.ui.renderers.NumberRenderer;
 import org.camra.staffing.data.dto.VolunteerDTO;
@@ -12,6 +13,7 @@ import org.camra.staffing.data.provider.VolunteerDataProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import java.util.function.Consumer;
 
 @SpringComponent
 @UIScope
@@ -20,10 +22,10 @@ public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
     @Autowired private VolunteerDataProvider volunteerDataProvider;
 
     @PostConstruct
-    @SuppressWarnings("unused")
     private void init() {
         setSizeFull();
         setDataProvider(volunteerDataProvider);
+        addColumn(this::formatDelete, new HtmlRenderer()).setWidth(50).setId("del");
         addColumn(this::formatEdit, new HtmlRenderer()).setWidth(50).setId("edit");
         addColumn(this::formatSessions, new HtmlRenderer()).setId("sessions").setWidth(50);
         addColumn(VolunteerDTO::getId, new NumberRenderer()).setCaption("Id");
@@ -40,6 +42,29 @@ public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
 
         addStringFilters("surname","role");
 
+        addItemClickListener(this::volunteerClick);
+
+    }
+
+    private void volunteerClick(ItemClick<VolunteerDTO> event) {
+        if (event.getColumn().getId()==null) return;
+        if (event.getColumn().getId().equals("edit")) {
+            if (editHandler!=null) {
+                editHandler.accept(event.getItem());
+            }
+        } else if (event.getColumn().getId().equals("sessions")) {
+            if (detailHandler!=null) {
+                detailHandler.accept(event.getItem());
+            }
+        } else if (event.getColumn().getId().equals("del")) {
+            if (deleteHandler!=null) {
+                deleteHandler.accept(event.getItem());
+            }
+        }
+    }
+
+    private String formatDelete(VolunteerDTO item) {
+        return Columns.getIconCode("#333", VaadinIcons.TRASH);
     }
 
     private String formatEdit(VolunteerDTO item) {

@@ -16,4 +16,5 @@ public interface VolunteerRepository extends JpaRepository<Volunteer, Integer>, 
     Optional<Volunteer> findByUuid(String uuid);
 
     Optional<Volunteer> findByMembershipAndSurnameAndForename(String membership, String surname, String forename);
+
 }

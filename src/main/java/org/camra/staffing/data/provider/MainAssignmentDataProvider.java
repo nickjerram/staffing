@@ -1,5 +1,7 @@
 package org.camra.staffing.data.provider;
 
+import com.vaadin.data.provider.QuerySortOrder;
+import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
 import org.camra.staffing.data.dto.MainViewDTO;
@@ -18,18 +20,31 @@ import org.springframework.data.domain.Sort;
 import com.vaadin.data.provider.Query;
 import org.springframework.data.jpa.domain.Specification;
 
+import javax.annotation.PostConstruct;
+
 @SpringComponent
 @UIScope
 public class MainAssignmentDataProvider extends SortableDataProvider<MainViewDTO, MainView> {
 
     @Autowired private MainViewService service;
 
+    private List<QuerySortOrder> defaultSorting = new ArrayList<>();
+
+    @PostConstruct
+    private void init() {
+        defaultSorting.add(new QuerySortOrder("volunteerName", SortDirection.ASCENDING));
+        defaultSorting.add(new QuerySortOrder("start", SortDirection.ASCENDING));
+        defaultSorting.add(new QuerySortOrder("areaName", SortDirection.ASCENDING));
+    }
+
     public boolean isInMemory() {
         return false;
     }
 
     protected Stream<MainViewDTO> fetchFromBackEnd(Query<MainViewDTO, String> query) {
-        Sort sort = doSortQuery(query);
+
+        Sort sort = doSortQuery(query, defaultSorting);
+
         Pageable pr = new OffsetBasedPageRequest(query.getOffset(), query.getLimit(), sort);
         return service.getRecords(buildSpecification(), pr);
     }

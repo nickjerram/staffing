@@ -8,11 +8,13 @@ import org.camra.staffing.data.dto.VolunteerDTO;
 import org.camra.staffing.data.dto.VolunteerSessionDTO;
 import org.camra.staffing.data.service.VolunteerService;
 import org.camra.staffing.widgets.admin.forms.VolunteerSessionFormLogic;
+import org.camra.staffing.widgets.admin.layouts.MenuLayoutLogic;
 import org.camra.staffing.widgets.admin.layouts.ViewLayout;
 import org.camra.staffing.widgets.admin.grids.VolunteerSessionGrid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 
 import java.util.stream.Stream;
@@ -26,23 +28,25 @@ public class VolunteerSessionView extends ViewLayout implements StaffingView {
     private VolunteerSessionFormLogic form;
     private String name;
     private VolunteerDTO volunteer;
+    @Lazy @Autowired private MenuLayoutLogic menu;
+
 
     void setVolunteer(VolunteerDTO volunteer) {
         this.form = context.getBean(VolunteerSessionFormLogic.class);
         this.volunteer = volunteer;
         this.name = volunteer.getForename()+" "+volunteer.getSurname();
         this.title.setValue("Sessions for "+name);
-        this.newButton.addClickListener(this::newSession);
+        this.newButton.setCaption("New Session");
+        this.newButton.addClickListener(event-> form.newSession(volunteer));
+        this.closeButton.setCaption("Close");
+        this.closeButton.addClickListener(event -> menu.removeVolunteerMenuItem(this));
+
         VolunteerSessionGrid grid = new VolunteerSessionGrid(VolunteerSessionGrid.Type.VOLUNTEER);
         grid.setDataProvider(DataProvider.fromCallbacks(this::getItems, this::countItems));
         grid.setEditHandler(this::showReassignmentForm);
         gridHolder.addComponent(grid);
         formHolder.addComponent(form);
         form.setSaveHandler(vs -> grid.getDataProvider().refreshAll());
-    }
-
-    private void newSession(Button.ClickEvent clickEvent) {
-        form.newSession(volunteer);
     }
 
     private int countItems(Query<VolunteerSessionDTO, Void> query) {
