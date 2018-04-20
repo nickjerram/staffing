@@ -27,6 +27,11 @@ public class MainViewDTO {
     private boolean volunteerWorked;
     private int tokens;
     private String comment;
+    private String volunteerComment;
+    private boolean firstaid;
+    private boolean forklift;
+    private boolean sia;
+    private boolean cellar;
 
     public static MainViewDTO create(MainView mainView) {
         MainViewDTO dto = new MainViewDTO();

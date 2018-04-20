@@ -19,8 +19,6 @@
  * @group util
  */
 
-* {zoom: 98%;}
-
 @-webkit-keyframes valo-animate-in-fade {
 		0% {
 		opacity: 0;
@@ -1011,11 +1009,6 @@
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
-}
-
-.v-gridlayout-spacing-on {
-    width: 20px;
-    height: 20px;
 }
 
 .v-app input[type="text"], .v-app .v-slot > .v-caption, .v-app .v-gridlayout-slot > .v-caption, .v-app .v-has-caption > .v-caption, .v-app .v-formlayout-captioncell > .v-caption, .v-app .v-csslayout > .v-caption {
@@ -10933,11 +10926,11 @@ div.v-layout.v-horizontal.v-widget {
 .mytheme h1, .mytheme .v-label-h1, .mytheme h2, .mytheme .v-label-h2, .mytheme h3, .mytheme .v-label-h3 {
 	line-height: 1.1;
 	font-weight: 300;
-	xcolor: #141414;
+	color: #141414;
 }
 
 .mytheme h1, .mytheme .v-label-h1 {
-	font-size: 1.6em;
+	font-size: 2.4em;
 	margin-top: 1.4em;
 	margin-bottom: 1em;
 	
@@ -10945,7 +10938,7 @@ div.v-layout.v-horizontal.v-widget {
 }
 
 .mytheme h2, .mytheme .v-label-h2 {
-	font-size: 1.2em;
+	font-size: 1.6em;
 	
 	margin-top: 1.6em;
 	margin-bottom: 0.77em;
@@ -10953,7 +10946,7 @@ div.v-layout.v-horizontal.v-widget {
 }
 
 .mytheme h3, .mytheme .v-label-h3 {
-	font-size: 1.0em;
+	font-size: 1.2em;
 	
 	margin-top: 1.8em;
 	margin-bottom: 0.77em;
@@ -11834,13 +11827,21 @@ div.v-layout.v-horizontal.v-widget {
 .mytheme .valo-menu {
 	height: 100%;
 	background-color: #3b3f42;
-	background-image: -webkit-linear-gradient(right, #313537 0%, #3b3f42 8px);
-	background-image: linear-gradient(to left,#313537 0%, #3b3f42 8px);
-	color: #9b9fa3;
+	background-image: -webkit-linear-gradient(right, #000 0%, #5b0000 75px);
+	background-image: linear-gradient(to left,#000 0%, #5b0000 75px);
+	color: #eeeaaa;
 	font-size: 14px;
 	line-height: 26px;
 	border-right: 1px solid #2e3134;
 	white-space: nowrap;
+}
+
+.darkred {
+	background-color: #3b3f42;
+	background-image: -webkit-linear-gradient(right, #000 0%, #5b0000 75px);
+	background-image: linear-gradient(to left,#000 0%, #5b0000 75px);
+	color: #eeeaaa !important;
+	font-size: 14px;
 }
 
 .mytheme .valo-menu-toggle {
@@ -11877,14 +11878,10 @@ div.v-layout.v-horizontal.v-widget {
 
 .mytheme .valo-menu-title {
 	line-height: 1.2;
-	background-color: #a40000;
-	background-image: -webkit-linear-gradient(top, #67a7eb 2%, #5491de 98%);
-	background-image: linear-gradient(to bottom,#67a7eb 2%, #5491de 98%);
 	color: white;
 	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.05);
 	padding: 11px 16px;
 	font-size: 14px;
-	border-bottom: 1px solid #4b7eb8;
 	-webkit-box-shadow: 0 2px 3px rgba(0, 0, 0, 0.05);
 	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.05);
 	text-align: center;
@@ -12451,17 +12448,6 @@ div.v-layout.v-horizontal.v-widget {
 	animation: valo-animate-in-fade 1s backwards;
 }
 
-wrapped-label {
-    word-wrap: break-word !important;
-}
-
-.mytheme .mobile-layout {
-    background-image: url(img/archetype-login-bg.jpg);
-    background-size: 100%;
-    background-color: rgba(50, 50, 50, 0.7);
-    color: #f2f6fa !important;
-}
-
 .mytheme .login-screen .login-information {
 	display: inline-block;
 	position: absolute;
@@ -12469,10 +12455,10 @@ wrapped-label {
 	left: 0;
 	width: 300px;
 	height: 100%;
-	background: #772605;
-	background-color: rgba(50, 50, 50, 0.7);
+	background: #60a0ea;
+	background-color: rgba(96, 160, 234, 0.7);
 	padding: 21px 21px 21px 21px;
-	color: #f2f6fa !important;
+	color: #f2f6fa;
 	-webkit-animation: valo-animate-in-fade 1s 1s backwards;
 	-moz-animation: valo-animate-in-fade 1s 1s backwards;
 	animation: valo-animate-in-fade 1s 1s backwards;

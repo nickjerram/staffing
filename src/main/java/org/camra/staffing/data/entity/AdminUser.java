@@ -1,6 +1,7 @@
 package org.camra.staffing.data.entity;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
 
@@ -16,4 +17,12 @@ public class AdminUser {
     private @Column(length=50) String password;
     private @Column(name="super") boolean superuser;
 
+    @Transient @Setter private String attempt;
+
+    public static AdminUser getLocalUser() {
+        AdminUser local = new AdminUser();
+        local.username = "Local";
+        local.superuser = true;
+        return local;
+    }
 }

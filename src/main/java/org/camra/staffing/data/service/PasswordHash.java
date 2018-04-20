@@ -11,6 +11,10 @@ import java.util.Base64;
 @Service
 public class PasswordHash {
 
+    public static void main(String[] args) {
+        System.out.println(new PasswordHash().hashPassword("password"));
+    }
+
     public String hashPassword(String password) {
         try {
             return tryHashPassword(password, 0);

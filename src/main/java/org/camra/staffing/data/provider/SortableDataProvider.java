@@ -1,8 +1,6 @@
 package org.camra.staffing.data.provider;
 
-import org.camra.staffing.data.specification.BooleanCriterion;
-import org.camra.staffing.data.specification.RatioCriterion;
-import org.camra.staffing.data.specification.StringCriterion;
+import org.camra.staffing.data.specification.*;
 import org.springframework.data.domain.Sort;
 
 import com.vaadin.data.provider.AbstractBackEndDataProvider;
@@ -10,7 +8,6 @@ import com.vaadin.data.provider.Query;
 import com.vaadin.data.provider.QuerySortOrder;
 import com.vaadin.shared.data.sort.SortDirection;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.domain.Specifications;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,10 +18,6 @@ import java.util.Map;
 public abstract class SortableDataProvider<DTO,E> extends AbstractBackEndDataProvider<DTO,String> {
 
     Map<String,Specification<E>> specificationMap = new HashMap<>();
-
-    protected Sort doSortQuery(Query<DTO, String> query) {
-        return doSortQuery(query, new ArrayList<>());
-    }
 
     /**
      * Convert Vaadin Sort query into Spring JPA Sort, using the default sorting if no sorting is specified in the query
@@ -83,10 +76,16 @@ public abstract class SortableDataProvider<DTO,E> extends AbstractBackEndDataPro
         refreshAll();
     }
 
+    public void addIntegerCriterion(String property, int value) {
+        IdCriterion<E> criterion = new IdCriterion<>("id",property, value);
+        specificationMap.put(property, criterion);
+        refreshAll();
+    }
+
     Specification<E> buildSpecification() {
-        Specification<E> result = Specifications.where(null);
+        Specification<E> result = new True<>();
         for (Specification<E> specification : specificationMap.values()) {
-            result = Specifications.where(result).and(specification);
+            result = Specification.where(result).and(specification);
         }
         return result;
     }

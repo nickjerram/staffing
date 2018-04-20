@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface PossibleSessionRepository extends JpaRepository<PossibleSession, PossibleSession.ID> {
 
-    List<PossibleSession> findByIdVolunteerId(int volunteerId);
+    List<PossibleSession> findByIdVolunteerIdOrderByStart(int volunteerId);
 }

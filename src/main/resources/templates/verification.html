@@ -1,0 +1,25 @@
+<div class="section">
+    <h3><span class="fa fa-user"></span>Are you a CAMRA Member?</h3>
+
+    <p>To volunteer, please enter your CAMRA credentials below.
+        Your details will be kept until the Staffing Form for 2019 is available, unless you instruct us to delete them earlier.	</p>
+    <p><b>If you are not a CAMRA member, then you can still volunteer if you are personally known by one of the organizing team.
+        If that is the case, <a href="/email">Click Here</a></b></p>
+
+    <div class="row">
+        <div class="col-sm-6">
+            <label><i class="fa fa-user" ></i> Membership Number :
+                <span ng-show="staffingForm.membership.$touched && staffingForm.membership.$invalid"></span>
+            </label>
+            <input name="membership" type="text" ng-model="form.membership" placeholder="Your Membership Number" required/>
+        </div>
+        <div class="col-sm-6">
+            <label><i class="fa fa-user" ></i> Password :
+                <span ng-show="staffingForm.password.$touched && staffingForm.password.$invalid"></span>
+            </label>
+            <input name="password" type="password" ng-model="form.password" placeholder="Your Password" required/>
+        </div>
+    </div>
+
+
+</div>

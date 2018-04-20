@@ -1,0 +1,26 @@
+<div class="section">
+    <h3><i class="fa fa-map-signs"></i>Choose Your Areas</h3>
+    <p>There is a range of different jobs to to be done.
+        Please indicate which of these you are interested in volunteering for,
+        and which you do not wish to volunteer for. </p>
+
+    <p>If you do not wish to work in a specific area, please change the appropriate selector to <b>No</b>. <br/>
+        If you especially wish to work in a specific area, please change the appropriate selector to <b>Yes</b>. <br/>
+        We may assign you to work in any Areas which you have selected <b>Yes</b> or <b>Don't Mind</b>,
+        although we will try our best to assign you mainly areas for which you selected <b>Yes</b>. <br/>
+        We will not assign you to areas for which you selected <b>No</b> unless we are desperately short and you agree. </p>
+    <p>{{area}}</p>
+    <div class="row">
+        <div class="col-sm-6 col-md-4" ng-repeat="area in form.areas">
+            <label><i class="fa fa-map-signs" ></i>{{area.areaName}}:</label>
+            <select class="form-control" ng-model="area.preference" ng-options="x for x in preferences" ng-change="areaSelect()">
+            </select>
+        </div>
+        <input style="display:none" name="areaCheck" type="checkbox" ng-model="form.areasValid" ng-required="true"/>
+    </div>
+
+    <div class="row error" ng-if="!areasValid()">
+        <p>Please do not say No to all Areas!</p>
+    </div>
+
+</div>

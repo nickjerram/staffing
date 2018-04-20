@@ -39,27 +39,36 @@ public class VolunteerService {
         return (int) volunteerRepository.count(specification);
     }
 
+    public Optional<VolunteerDTO> getVolunteer(Integer id) {
+        return id==null ? Optional.empty() : volunteerRepository.findById(id).map(VolunteerDTO::create);
+    }
+
     public Optional<VolunteerDTO> getVolunteer(String uuid) {
         return volunteerRepository.findByUuid(uuid).map(VolunteerDTO::create);
     }
 
-    public Optional<VolunteerDTO> getVolunteer(CamraMember member) {
+    public Optional<VolunteerDTO> getVolunteer(Optional<CamraMember> member) {
+        return member.flatMap(this::getVolunteer);
+    }
+
+    private Optional<VolunteerDTO> getVolunteer(CamraMember member) {
         return volunteerRepository.findByMembershipAndSurnameAndForename(member.getMembership(), member.getSurname(), member.getForename())
                 .map(VolunteerDTO::create);
     }
 
     public void deleteVolunteer(VolunteerDTO dto) {
-        Volunteer toDelete = volunteerRepository.findOne(dto.getId());
+        Volunteer toDelete = volunteerRepository.getOne(dto.getId());
         volunteerRepository.delete(toDelete);
     }
 
-    public List<AreaSelectorDTO> getAreaSelectors(Integer volunteerId) {
-        List<AreaSelector> selectors = areaSelectorRepository.findByIdVolunteerId(volunteerId);
+    public List<AreaSelectorDTO> getAreaSelectors(Optional<Integer> volunteerId) {
+        int id = volunteerId.orElse(0);
+        List<AreaSelector> selectors = areaSelectorRepository.findByIdVolunteerIdOrderByIdAreaId(id);
         return selectors.stream().map(AreaSelectorDTO::create).collect(Collectors.toList());
     }
 
     public void saveVolunteer(VolunteerDTO volunteerDTO) {
-        Volunteer toSave = volunteerDTO.getId()==null ? new Volunteer() : volunteerRepository.findOne(volunteerDTO.getId());
+        Volunteer toSave = volunteerDTO.getId()==null ? new Volunteer() : volunteerRepository.getOne(volunteerDTO.getId());
         volunteerDTO.populateVolunteer(toSave);
         Volunteer saved = volunteerRepository.save(toSave);
 
@@ -69,11 +78,11 @@ public class VolunteerService {
 
         //sessions
         for (int sessionId : volunteerDTO.getSessionsToAdd()) {
-            Session session = sessionRepository.findOne(sessionId);
+            Session session = sessionRepository.getOne(sessionId);
             saved.addSession(session, assignableAreaRepository.getUnassigned());
         }
         for (int sessionId : volunteerDTO.getSessionsToRemove()) {
-            Session session = sessionRepository.findOne(sessionId);
+            Session session = sessionRepository.getOne(sessionId);
             saved.removeSession(session);
         }
         volunteerRepository.save(saved);
@@ -84,7 +93,6 @@ public class VolunteerService {
         List<VolunteerSessionView> volunteerSessions = volunteerSessionRepository.findByIdVolunteerId(volunteerId, pageRequest);
         return volunteerSessions.stream().map(VolunteerSessionDTO::create).collect(Collectors.toList());
     }
-
 
     public int countSessions(int volunteerId) {
         return (int) volunteerSessionRepository.countByIdVolunteerId(volunteerId);
@@ -97,14 +105,14 @@ public class VolunteerService {
     }
 
     public List<SessionSelectorDTO> getPossibleSessions(int volunteerId) {
-        List<PossibleSession> possibleSessions = possibleSessionRepository.findByIdVolunteerId(volunteerId);
+        List<PossibleSession> possibleSessions = possibleSessionRepository.findByIdVolunteerIdOrderByStart(volunteerId);
         return possibleSessions.stream().map(SessionSelectorDTO::create).collect(Collectors.toList());
     }
 
     public void saveAssignment(VolunteerSessionDTO volunteerSession) {
-        Volunteer v = volunteerRepository.findOne(volunteerSession.getVolunteerId());
-        Session session = sessionRepository.findOne(volunteerSession.getSessionId());
-        AssignableArea area = assignableAreaRepository.findOne(volunteerSession.getAreaId());
+        Volunteer v = volunteerRepository.getOne(volunteerSession.getVolunteerId());
+        Session session = sessionRepository.getOne(volunteerSession.getSessionId());
+        AssignableArea area = assignableAreaRepository.getOne(volunteerSession.getAreaId());
         VolunteerSession vs = v.getSessionMap().get(volunteerSession.getSessionId());
         vs.setLocked(volunteerSession.isLocked());
         vs.setWorked(volunteerSession.isWorked());
@@ -115,10 +123,19 @@ public class VolunteerService {
     }
 
     public void saveVolunteerSession(int volunteerId, List<Integer> sessionsIds) {
-        Volunteer v = volunteerRepository.findOne(volunteerId);
+        Volunteer v = volunteerRepository.getOne(volunteerId);
         for (Integer sessionId: sessionsIds) {
-            Session s = sessionRepository.findOne(sessionId);
+            Session s = sessionRepository.getOne(sessionId);
             v.addSession(s, assignableAreaRepository.getUnassigned());
+        }
+        volunteerRepository.saveAndFlush(v);
+    }
+
+    public void removeVolunteerSession(int volunteerId, List<Integer> sessionIds) {
+        Volunteer v = volunteerRepository.getOne(volunteerId);
+        for (Integer sessionId : sessionIds) {
+            Session s = sessionRepository.getOne(sessionId);
+            v.removeSession(s);
         }
         volunteerRepository.saveAndFlush(v);
     }

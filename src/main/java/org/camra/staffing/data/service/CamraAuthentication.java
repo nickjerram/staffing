@@ -9,8 +9,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.camra.staffing.util.CamraMember;
-import org.camra.staffing.util.Properties;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -31,8 +29,9 @@ import java.util.Optional;
 @Service
 public class CamraAuthentication {
 
-    @Autowired private Properties properties;
     private XPath xpath;
+    @Value("${verification.url}") private String camraUrl;
+    @Value("${verification.key}") private String securityKey;
 
     @PostConstruct
     @SuppressWarnings("unused")
@@ -42,13 +41,13 @@ public class CamraAuthentication {
     }
 
 
-    public Optional<CamraMember> requestMemberDetails(int membership, String password) {
+    public Optional<CamraMember> requestMemberDetails(String membership, String password) {
         HttpClient httpclient = HttpClients.createDefault();
-        HttpPost httppost = new HttpPost(properties.getBaseUrl());
+        HttpPost httppost = new HttpPost(camraUrl);
 
         List<NameValuePair> params = new ArrayList<>(2);
-        params.add(new BasicNameValuePair("KEY", properties.getSecurityKey()));
-        params.add(new BasicNameValuePair("memno", String.valueOf(membership)));
+        params.add(new BasicNameValuePair("KEY", securityKey));
+        params.add(new BasicNameValuePair("memno", membership));
         params.add(new BasicNameValuePair("pass", password));
 
         httppost.setEntity(formEntity(params));

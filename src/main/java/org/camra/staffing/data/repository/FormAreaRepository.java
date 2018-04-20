@@ -8,4 +8,5 @@ import java.util.List;
 public interface FormAreaRepository extends JpaRepository<FormArea, Integer> {
 
     List<FormArea> findAllByOrderById();
+
 }

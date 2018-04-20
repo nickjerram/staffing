@@ -1,0 +1,64 @@
+<!--A Design by W3layouts
+Author: W3layout
+Author URL: http://w3layouts.com
+License: Creative Commons Attribution 3.0 Unported
+License URL: http://creativecommons.org/licenses/by/3.0/
+-->
+<!DOCTYPE HTML>
+<html ng-app="staffing">
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+<script src="/js/areas.js"></script>
+<head>
+    <title>Reading Beer Festival Volunteering</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link href="/css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+</head>
+
+<body>
+<!--background-->
+<h1> Reading Beer and Cider Festival </h1>
+<h2>Volunteering Form</h2>
+<div class="container" ng-controller="Areas">
+    <form action="#" method="post">
+
+        <div class="row">
+            <div class="col-sm-6 staffing-field">
+                <label><i class="fa fa-user" aria-hidden="true"></i> Forename:</label>
+                <input type="text" name="forename" placeholder="Your forename" required="" ng-model="forename"/>
+            </div>
+            <div class="col-sm-6 staffing-field">
+                <label><i class="fa fa-user" aria-hidden="true"></i> Surname:</label>
+                <input type="text" name="surname" placeholder="Your surname" required=""/>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-6 staffing-field">
+                <label><i class="fa fa-envelope" aria-hidden="true"></i> Email :</label>
+                <input type="email" name="email" placeholder="Your email" required="" />
+            </div>
+            <div  class="col-sm-6"></div>
+        </div>
+
+        <div class="row">
+            <div ng-repeat="area in areas" class="col-sm-4">
+                <label><i class="fa fa-home" aria-hidden="true"></i>{{area.areaName}} :</label>
+                <select class="form-control" ng-model="areas[$index].preference" ng-options="x for x in preferences">
+                </select>
+            </div>
+        </div>
+
+        <p>Area 1 {{areas[1]}}</p>
+        <p>Name {{forename}}</p>
+
+
+        <div class="make">
+            <input type="submit" value="Make a Reservation">
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

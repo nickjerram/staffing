@@ -1,0 +1,58 @@
+<div class="section">
+    <h3><span class="fa fa-user"></span>Personal Details</h3>
+
+    <p>We'll only use your personal details to contact you about Reading Beer and Cider Festival<br/>
+        We'll never pass your details to anyone else without your permission<br/>
+        Your details will be kept until the Staffing Form for 2019 is available, unless you instruct us to delete them earlier.	</p>
+    <div class="row">
+        <div class="col-sm-6">
+            <label><i class="fa fa-user" ></i> Forename :
+                <span ng-show="staffingForm.forename.$touched && staffingForm.forename.$invalid"></span>
+            </label>
+            <input name="forename" type="text" ng-model="form.forename" placeholder="Your forename" required/>
+        </div>
+        <div class="col-sm-6">
+            <label><i class="fa fa-user" ></i> Surname :
+                <span ng-show="staffingForm.surname.$touched && staffingForm.surname.$invalid"></span>
+            </label>
+            <input name="surname" type="text" ng-model="form.surname" placeholder="Your surname" required/>
+        </div>
+    </div>
+
+    <div class="row" ng-if="form.verified">
+        <div class="col-sm-6">
+            <label><i class="fa fa-cog" ></i>CAMRA Membership:
+                <span ng-show="staffingForm.membership.$touched && staffingForm.membership.$invalid"></span>
+            </label>
+            <input  name="membership" type="text" placeholder="Membership Number" ng-model="form.membership" readonly>
+        </div>
+        <div class="col-sm-6">
+            <label><i class="fa fa-envelope" ></i>Email Address:
+                <span ng-show="staffingForm.email.$touched && staffingForm.email.$invalid"></span>
+            </label>
+            <input name="email" type="email" placeholder="Your email address" ng-model="form.email" required>
+        </div>
+    </div>
+
+    <div class="row" ng-if="!form.verified">
+        <div class="col-sm-4">
+            <label><i class="fa fa-cog" ></i>CAMRA Membership: </label>
+            <input  name="membership" type="text" placeholder="Membership Number" ng-model="form.membership" ng-required="!form.managervouch" >
+        </div>
+        <div class="col-sm-4">
+            <label><i class="fa fa-envelope" ></i>Festival Contact Name:</label>
+            <input name="managervouch" type="text" placeholder="Festival Contact Name" ng-model="form.managervouch" ng-required="!form.membership" >
+        </div>
+        <div class="col-sm-4">
+            <label><i class="fa fa-envelope" ></i>Email Address:
+                <span ng-show="staffingForm.email.$touched && staffingForm.email.$invalid"></span>
+            </label>
+            <input name="email" type="email" placeholder="Your email address" ng-model="form.email" required>
+        </div>
+    </div>
+
+    <div class="row error" ng-if="!form.verified && (staffingForm.managervouch.$touched || staffingForm.membership.$touched) && staffingForm.managervouch.$invalid && staffingForm.membership.$invalid">
+        <p>Please enter either the name of your Festival Contact or your CAMRA membership number.</p>
+    </div>
+
+</div>

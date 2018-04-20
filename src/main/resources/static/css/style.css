@@ -1,0 +1,268 @@
+article, aside, details, figcaption, figure,footer, header, hgroup, menu, nav, section {display: block;}
+html {
+    background-image: url("../images/background.jpg");
+    background-size: cover;
+    background-attachment: fixed;
+}
+body {
+	font-family: 'Roboto', sans-serif;
+    height: 100%;
+	margin: 0px;
+    background: -webkit-linear-gradient(top, rgba(0,0,0,1), rgba(0,0,0,0.6)); /* For Safari 5.1 to 6.0 */
+    background: -o-linear-gradient(bottom, rgba(0,0,0,1), rgba(0,0,0,0.6)); /* For Opera 11.1 to 12.0 */
+    background: -moz-linear-gradient(bottom, rgba(0,0,0,1), rgba(0,0,0,0.6)); /* For Firefox 3.6 to 15 */
+    background: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0.6)); /* Standard syntax (must be last) */
+	background-attachment: fixed;
+}
+
+.wrapper {
+    width: 1400px;
+    margin: 0 auto;
+}
+
+h1,h2,h3 {
+    font-size: 30px;
+    letter-spacing: 5px;
+    margin: 1.5em 0;
+    word-spacing: 3px;
+	color: #fdfbfb;
+    font-family: "Montserrat",sans-serif;
+    font-weight: 400;
+    text-align: center;
+    text-transform: uppercase;
+}
+h2 {
+    font-size: 20px;
+}
+h3 {
+    font-size:16px;
+}
+p {
+   color: #888;
+   margin-bottom: 20px;
+}
+a {
+    color: #fff;
+    text-decoration: underline;
+}
+a:hover {
+    color: #fff;
+    font-weight:bold;
+}
+.section {
+    background: rgba(10, 10, 10, 0.74);
+    padding: 35px;
+    margin-bottom: 20px;
+}
+.error {
+    background: rgba(90, 0, 0, 0.74);
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid red;
+}
+.error p {
+    color: #fdfbfb;
+    font-size: 1.5em !important;
+}
+.message {
+    background: rgba(0, 90, 0, 0.74);
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid green;
+}
+.message p {
+    font-size: 1.5em !important;
+    color: #fdfbfb !important;
+}
+.error i {
+    font-size: 1.5em;
+    margin-right: 10px;
+	color:red;
+}
+.message i {
+    font-size: 1.5em;
+    margin-right: 10px;
+	color:green;
+}
+.section label {
+    font-size: 16px;
+    color: #fff;
+    text-align: left;
+    display: inline-block;
+    float: left;
+    font-weight: 500;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom:35px;
+    margin-top:35px;
+}
+.section i {
+     font-size: 1em;
+    margin-right: 10px;
+	color: #a71930;
+}
+.section label.sessions {
+	font-size: 12px;
+    display: block;
+    margin-bottom: 12px;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.section label.selector {
+    position: relative;
+    padding-left: 20px;
+}
+
+.day {
+    margin-top:20px;
+}
+
+.section input[type="text"],.section input[type="email"],.section input[type="password"],select.form-control,textarea {
+    width: 89%;
+    color:#9a9797;
+    outline: none;
+    font-size: 1em;
+	line-height: 25px;
+    padding: 5px 10px;
+   border: 2px solid #fff;
+    -webkit-appearance: none;
+    margin-bottom: 1.5em;
+	font-family: 'Roboto', sans-serif;
+	background:none;
+}
+
+.section input.ng-invalid.ng-touched {
+    border: 2px solid #f00;
+}
+
+.section input[type="submit"] {
+    background: rgba(0, 90, 0, 0.74);
+    color: #fff;
+    padding: 5px 10px;
+    font-family: "Montserrat",sans-serif;
+    font-weight: 400;
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 30px;
+    border: none;
+    cursor: pointer;
+}
+
+.section input[type="submit"]:hover {
+    background: rgba(0, 150, 0, 0.74);
+    cursor: pointer;
+}
+
+.section input[type="submit"]:disabled {
+    background: rgba(100, 0, 0, 0.74);
+    color: #999;
+    cursor: not-allowed;
+}
+
+label span {
+    color: #a71930;
+    font-style: italic;
+    text-transform: none;
+}
+
+label span::after {
+    content: "Please enter the required information";
+}
+
+
+.skill {
+    width:89%;
+}
+
+.submit {
+    text-align: center;
+}
+
+
+.level0 {background-color:#42A400; color:#000}
+.level1 {background-color:#429400; color:#000}
+.level2 {background-color:#5B9600;}
+.level3 {background-color:#769900;}
+.level4 {background-color:#929C00;}
+.level5 {background-color:#9E8E00;}
+.level6 {background-color:#A17701;}
+.level7 {background-color:#A45E01;}
+.level8 {background-color:#A64501;}
+.level9 {background-color:#A92A01;}
+.levelA {background-color:#AC0F02; color:#000;}
+
+.selector {
+    width:200px;
+}
+
+.wide {
+    width:300px;
+}
+/* Hide the browser's default checkbox */
+.selector input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Create a custom checkbox */
+.checkmark {
+    position: absolute;
+    top: 2px;
+    right: 0;
+    height: 22px;
+    width: 22px;
+    background-color: rgba(0,0,0,0.2);
+}
+
+.skills {
+    background-color: #555 !important;
+}
+
+/* On mouse-over, add a grey background color */
+.selector:hover input ~ .checkmark {
+    background-color: rgba(0,0,0,0.4);
+}
+
+/* When the checkbox is checked, add a reddish background */
+.selector input:checked ~ .checkmark {
+    background-color: #a71930;
+    border-style: solid;
+    border-color: black;
+    border-width: 1px;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Show the checkmark when checked */
+.selector input:checked ~ .checkmark:after {
+    display: block;
+}
+
+/* Style the checkmark/indicator */
+.selector .checkmark:after {
+    left: 9px;
+    top: 5px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}

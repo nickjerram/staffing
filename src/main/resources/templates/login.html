@@ -1,0 +1,56 @@
+<!DOCTYPE HTML>
+<html ng-app="admin">
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-sanitize.js"></script>
+<script src="/js/admin.js"></script>
+<head>
+    <title>A nice form</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link href="/css/font-awesome.css" rel="stylesheet">
+    <link href="/css/style.css" rel='stylesheet' type='text/css' />
+    <link href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
+    <link href="//fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+
+    <h1> Reading Beer and Cider Festival</h1>
+    <h2>Staffing Administration Login</h2>
+
+    <form method="post" name="staffingForm" ng-controller="AdminController" ng-submit="submitForm()">
+
+        <div ng-if="form.error">
+            <div class="error">
+                <i class="fa fa-times-circle-o"></i>
+                <p>{{form.errorMessage}}</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3><span class="fa fa-user"></span>Administrator Login?</h3>
+
+            <p>If you want access, please ask the Staffing Manager</p>
+
+            <div class="row">
+                <div class="col-sm-6">
+                    <label><i class="fa fa-user" ></i> Username :</label>
+                    <input name="membership" type="text" ng-model="form.user" placeholder="Username" required/>
+                </div>
+                <div class="col-sm-6">
+                    <label><i class="fa fa-user" ></i> Password :</label>
+                    <input name="password" type="password" ng-model="form.password" placeholder="Password" required/>
+                </div>
+            </div>
+
+        </div>
+        <div class="section row submit">
+            <input type="submit" value="Submit" ng-disabled="staffingForm.$invalid"/>
+        </div>
+
+    </form>
+</div>
+
+</body>

@@ -1,0 +1,53 @@
+<div class="section">
+
+    <h3><i class="fa fa-clock-o"></i>Choose Your Sessions</h3>
+    <p>You may or may not be assigned work on all the sessions you indicate,
+        it depends on how many volunteers are already assigned at those times.
+        We will let you know exactly which session we need you for closer to the Festival.</p>
+
+    <p>In order to try and avoid volunteer overcrowding at quiet times and being short-staffed at busy times,
+        the sessions are colour coded to indicate roughly how many more staff are needed.</p>
+
+    <div class="row hidden-xs">
+        <div class="col-xs-2 level1">More Needed</div>
+        <div class="col-xs-1 level2">&nbsp;</div>
+        <div class="col-xs-1 level3">&nbsp;</div>
+        <div class="col-xs-1 level4">&nbsp;</div>
+        <div class="col-xs-1 level5">&nbsp;</div>
+        <div class="col-xs-1 level6">&nbsp;</div>
+        <div class="col-xs-1 level7">&nbsp;</div>
+        <div class="col-xs-1 level8">&nbsp;</div>
+        <div class="col-xs-1 level9">&nbsp;</div>
+        <div class="col-xs-2 levelA">Fully Staffed</div>
+    </div>
+
+    <div class="visible-xs">
+        <div class="row level1">More Needed</div>
+        <div class="row level2">&nbsp;</div>
+        <div class="row level3">&nbsp;</div>
+        <div class="row level4">&nbsp;</div>
+        <div class="row level5">&nbsp;</div>
+        <div class="row level6">&nbsp;</div>
+        <div class="row level7">&nbsp;</div>
+        <div class="row level8">&nbsp;</div>
+        <div class="row level9">&nbsp;</div>
+        <div class="row levelA">Fully Staffed</div>
+    </div>
+
+    <div class="row day" ng-repeat="(key,day) in form.sessions">
+        <div class="col-sm-4 col-md-2">
+            <label><i class="fa fa-calendar" ></i>{{key | date : 'EEE d MMMM'}}:</label>
+        </div>
+        <div class="col-sm-8 col-md-10">
+            <div class="row">
+                <div class="{{session.style}} col-xs-12 col-sm-6 col-md-4 col-lg-2" ng-repeat="session in day">
+                    <label class="sessions selector">{{session.description}}:
+                        <input type="checkbox" ng-model="session.selected"/>
+                        <span class="checkmark"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

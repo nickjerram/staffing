@@ -3,6 +3,7 @@ package org.camra.staffing.data.dto;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.camra.staffing.data.entity.FormArea;
 import org.camra.staffing.data.entityviews.AreaSelector;
 import org.camra.staffing.data.entity.AssignableArea;
 import org.camra.staffing.data.entity.Preference;
@@ -28,6 +29,20 @@ public class AreaSelectorDTO {
         dto.areaName = as.getName();
         return dto;
     }
+
+    public static AreaSelectorDTO create(FormArea fa) {
+        AreaSelectorDTO dto = new AreaSelectorDTO(fa.getId(), Preference.DontMind);
+        dto.areaName = fa.getName();
+        return dto;
+    }
+
+    public static AreaSelectorDTO create(AssignableArea aa) {
+        AreaSelectorDTO dto = new AreaSelectorDTO(aa.getId(), Preference.DontMind);
+        dto.areaName = aa.getName();
+        return dto;
+    }
+
+    public AreaSelectorDTO() {}
 
     public AreaSelectorDTO(int areaId, Preference preference) {
         this.areaId = areaId;

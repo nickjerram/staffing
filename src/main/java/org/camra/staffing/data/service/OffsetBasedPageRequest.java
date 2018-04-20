@@ -25,7 +25,7 @@ public class OffsetBasedPageRequest implements Pageable, Serializable {
      * @param limit  the size of the elements to be returned.
      * @param sort   can be {@literal null}.
      */
-    public OffsetBasedPageRequest(int offset, int limit, Sort sort) {
+    public OffsetBasedPageRequest(long offset, int limit, Sort sort) {
         if (offset < 0) {
             throw new IllegalArgumentException("Offset index must not be less than zero!");
         }
@@ -34,7 +34,7 @@ public class OffsetBasedPageRequest implements Pageable, Serializable {
             throw new IllegalArgumentException("Limit must not be less than one!");
         }
         this.limit = limit;
-        this.offset = offset;
+        this.offset = (int)offset;
         this.sort = sort;
     }
 
@@ -71,7 +71,7 @@ public class OffsetBasedPageRequest implements Pageable, Serializable {
     }
 
     @Override
-    public int getOffset() {
+    public long getOffset() {
         return offset;
     }
 

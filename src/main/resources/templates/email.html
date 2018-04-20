@@ -1,0 +1,53 @@
+<div class="section">
+    <h3><span class="fa fa-user"></span>Your Contact Details</h3>
+
+    <p>Please enter your name and email address below, and we'll email you a unique link to your Staffing Form.	</p>
+    <div class="row">
+        <div class="col-sm-6">
+            <label><i class="fa fa-user" ></i> Forename :
+                <span ng-show="staffingForm.forename.$touched && staffingForm.forename.$invalid"></span>
+            </label>
+            <input name="forename" type="text" ng-model="form.forename" placeholder="Your forename" required/>
+        </div>
+        <div class="col-sm-6">
+            <label><i class="fa fa-user" ></i> Surname :
+                <span ng-show="staffingForm.surname.$touched && staffingForm.surname.$invalid"></span>
+            </label>
+            <input name="surname" type="text" ng-model="form.surname" placeholder="Your surname" required/>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6">
+            <label><i class="fa fa-envelope" ></i>Email Address:
+                <span ng-show="staffingForm.email.$touched && staffingForm.email.$invalid"></span>
+            </label>
+            <input  name="email" type="email" placeholder="Your email address" ng-model="form.email" required/>
+        </div>
+        <div class="col-sm-6">
+            <label><i class="fa fa-envelope" ></i>Confirm Email Address:
+                <span ng-show="staffingForm.confirmEmail.$touched && staffingForm.confirmEmail.$invalid"></span>
+            </label>
+            <input name="confirmEmail" type="email" placeholder="Your email address" ng-model="form.confirmEmail" required/>
+        </div>
+    </div>
+
+    <div class="row error" ng-show="staffingForm.email.$touched && staffingForm.confirmEmail.$touched && confirmEmail()">
+            <p>The email addresses need to match Please confirm you have entered them correctly.</p>
+    </div>
+
+    <div class="row">
+        <p>Please enter the name of the brewery shown in the image, This is to ensure that only real people fill this in.</p>
+        <img src="/captcha">
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6">
+            <label><i class="fa fa-question" ></i>What word do you see?:
+                <span ng-show="staffingForm.forename.$touched && staffingForm.forename.$invalid"></span>
+            </label>
+            <input type="text" placeholder="I'm not a Robot" ng-model="form.captcha" required>
+        </div>
+    </div>
+
+</div>

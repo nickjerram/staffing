@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface AreaSelectorRepository extends JpaRepository<AreaSelector, AreaSelector.ID> {
 
-    List<AreaSelector> findByIdVolunteerId(Integer volunteerId);
+    List<AreaSelector> findByIdVolunteerIdOrderByIdAreaId(Integer volunteerId);
 }
