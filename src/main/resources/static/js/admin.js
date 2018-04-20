@@ -14,7 +14,8 @@ adminApp.controller('AdminController', function($scope, $http, $window) {
         }).then(function successCallback(response) {
             $scope.form = response.data;
             if (response.data.success) {
-                var landingUrl = $window.location.host + "/admin";
+                var landingUrl = $window.location.host + "/admin";               
+                landingUrl = 'https://'+landingUrl;
                 console.log("URL "+landingUrl);
                 $window.location.href = landingUrl;
             } else {
