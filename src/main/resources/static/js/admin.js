@@ -15,9 +15,6 @@ adminApp.controller('AdminController', function($scope, $http, $window) {
             $scope.form = response.data;
             if (response.data.success) {
                 var landingUrl = $window.location.host + "/admin";
-                if (!landingUrl.startsWith("https://")) {
-                    landingUrl = 'http://'+landingUrl;
-                }
                 console.log("URL "+landingUrl);
                 $window.location.href = landingUrl;
             } else {
