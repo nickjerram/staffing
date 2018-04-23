@@ -81,7 +81,7 @@ public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
             if (deleteHandler!=null) {
                 deleteHandler.accept(event.getItem());
             }
-        } else if (confirmationsEnabled && event.getColumn().getId().equals("confirm")) {
+        } else if (confirmationsEnabled && event.getColumn().getId().equals("confirm") && event.getItem().isAssigned()) {
             if (emailSender.sendConfirmation(event.getItem())) {
                 volunteerService.setConfirmed(event.getItem());
                 volunteerDataProvider.refreshAll();
@@ -102,9 +102,10 @@ public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
     }
 
     private String formatConfirm(VolunteerDTO item) {
+        String enabledColour = item.isAssigned() ? "#900" : "#ccc";
         return item.isConfirmed() ?
             Columns.getIconCode("#090", VaadinIcons.CHECK_SQUARE) :
-            Columns.getIconCode((confirmationsEnabled ? "#900" : "#ccc"), VaadinIcons.ENVELOPE);
+            Columns.getIconCode((confirmationsEnabled ? enabledColour : "#ccc"), VaadinIcons.ENVELOPE);
     }
 
     private String formatSessions(VolunteerDTO volunteer) {

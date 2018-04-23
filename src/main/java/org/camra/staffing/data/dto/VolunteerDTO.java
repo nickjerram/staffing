@@ -42,6 +42,10 @@ public class VolunteerDTO {
     private Set<Integer> sessionsToRemove = new HashSet<>();
     private Set<Integer> sessionsToAdd = new HashSet<>();
 
+    public boolean isAssigned() {
+        return assignedSessions==totalSessions;
+    }
+
     public void addSession(int sessionId) {
         if (!sessions.contains(sessionId)) {
             sessionsToAdd.add(sessionId);
