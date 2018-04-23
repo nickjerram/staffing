@@ -2,16 +2,16 @@ package org.camra.staffing.admin.grids;
 
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.spring.annotation.SpringComponent;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.renderers.HtmlRenderer;
 import org.camra.staffing.admin.access.Manager;
+import org.camra.staffing.admin.ui.TimeConverter;
 import org.camra.staffing.data.dto.VolunteerSessionDTO;
-import org.camra.staffing.data.entity.VolunteerSession;
 import org.camra.staffing.data.entityviews.VolunteerSessionView;
 import org.camra.staffing.data.provider.SortableDataProvider;
 import org.camra.staffing.data.provider.VolunteerSessionDataProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
 
 import javax.annotation.PostConstruct;
@@ -38,7 +38,7 @@ public class VolunteerSessionGrid extends AbstractGrid<VolunteerSessionDTO, Volu
         if (manager.isSuperUser()) {
             addColumn(this::formatEditForVolunteer, new HtmlRenderer()).setWidth(50).setId("edit");
         }
-        addColumn(VolunteerSessionDTO::getSessionName).setWidth(200).setCaption("Session");
+        addColumn(VolunteerSessionDTO::getDescription).setWidth(250).setCaption("Session");
         addStandardColumns();
         provider.refreshAll();
     }
@@ -66,8 +66,8 @@ public class VolunteerSessionGrid extends AbstractGrid<VolunteerSessionDTO, Volu
 
     private void addStandardColumns() {
         addColumn(VolunteerSessionDTO::getAreaName).setCaption("Area").setId("areaName").setWidth(200);
-        addColumn(this::formatStartTime).setCaption("Start").setWidth(100);
-        addColumn(this::formatFinishTime).setCaption("Finish").setWidth(100);
+        addColumn(this::formatStartTime).setCaption("Start").setId("start").setWidth(100);
+        addColumn(this::formatFinishTime).setCaption("Finish").setId("finish").setWidth(100);
         addColumn(this::formatAssigned, new HtmlRenderer()).setCaption("Staff").setWidth(100);
         addColumn(this::formatWorked, new HtmlRenderer()).setCaption("Worked").setWidth(100);
         addColumn(VolunteerSessionDTO::getTokens).setCaption("Tokens").setWidth(100);

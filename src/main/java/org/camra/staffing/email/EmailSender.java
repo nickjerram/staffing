@@ -11,22 +11,27 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import org.camra.staffing.data.dto.VolunteerDTO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 @Configuration
 public class EmailSender {
 
     private Properties properties;
+    @Autowired private ConfirmationMessageBuilder messageBuilder;
     @Value("${mail.smtp.starttls.enable}") private String startTls;
     @Value("${mail.transport.protocol}") private String protocol;
     @Value("${mail.smtp.auth}") private String auth;
     @Value("${mail.smtp.host}") private String host;
     @Value("${mail.user}") private String user;
     @Value("${mail.password}") private String password;
+    @Value("${staffing.festivalName}") private String festivalName;
 
     @PostConstruct
     public void init() {
@@ -34,6 +39,19 @@ public class EmailSender {
         properties.setProperty("mail.smtp.starttls.enable", startTls);
         properties.setProperty("mail.transport.protocol", protocol);
         properties.setProperty("mail.smtp.auth", auth);
+    }
+
+    public boolean sendConfirmation(VolunteerDTO volunteer) {
+        String messageText = messageBuilder.buildMessage(volunteer);
+        if (StringUtils.hasText(messageText)) {
+            EmailMessage message = new EmailMessage();
+            message.addRecipient(volunteer.getEmail());
+            message.setSubject(festivalName);
+            message.setBody(messageText);
+            return sendMessage(message);
+        } else {
+            return false;
+        }
     }
 
     public boolean sendMessage(EmailMessage emailMessage) {

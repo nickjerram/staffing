@@ -10,11 +10,9 @@ import java.util.List;
 public interface VolunteerSessionRepository extends JpaRepository<VolunteerSessionView, VolunteerSessionView.ID>,
         JpaSpecificationExecutor<VolunteerSessionView> {
 
-    List<VolunteerSessionView> findByIdVolunteerId(int volunteerId, Pageable page);
+    List<VolunteerSessionView> findByIdVolunteerIdOrderBySessionStart(int volunteerId);
 
     List<VolunteerSessionView> findByIdSessionId(int sessionId, Pageable page);
-
-    long countByIdVolunteerId(int volunteerId);
 
     long countByIdSessionId(int sessionId);
 }

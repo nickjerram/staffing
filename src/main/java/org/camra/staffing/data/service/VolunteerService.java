@@ -9,6 +9,7 @@ import org.camra.staffing.data.entityviews.PossibleSession;
 import org.camra.staffing.data.entityviews.VolunteerSessionView;
 import org.camra.staffing.data.repository.*;
 import org.camra.staffing.util.CamraMember;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
@@ -56,6 +57,12 @@ public class VolunteerService {
                 .map(VolunteerDTO::create);
     }
 
+    public void setConfirmed(VolunteerDTO volunteer) {
+        Volunteer toConfirm = volunteerRepository.getOne(volunteer.getId());
+        toConfirm.setConfirmed(true);
+        volunteerRepository.saveAndFlush(toConfirm);
+    }
+
     public void deleteVolunteer(VolunteerDTO dto) {
         Volunteer toDelete = volunteerRepository.getOne(dto.getId());
         volunteerRepository.delete(toDelete);
@@ -88,14 +95,15 @@ public class VolunteerService {
         volunteerRepository.save(saved);
     }
 
-    public List<VolunteerSessionDTO> getSessions(int volunteerId, Query<VolunteerSessionDTO,Void> query) {
-        OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(query.getOffset(), query.getLimit());
-        List<VolunteerSessionView> volunteerSessions = volunteerSessionRepository.findByIdVolunteerId(volunteerId, pageRequest);
-        return volunteerSessions.stream().map(VolunteerSessionDTO::create).collect(Collectors.toList());
-    }
-
-    public int countSessions(int volunteerId) {
-        return (int) volunteerSessionRepository.countByIdVolunteerId(volunteerId);
+    public List<VolunteerSessionDTO> getSessions(int volunteerId) {
+        List<VolunteerSessionView> vs = volunteerSessionRepository.findByIdVolunteerIdOrderBySessionStart(volunteerId);
+        for (VolunteerSessionView v : vs) {
+            System.out.println(v.getSessionName());
+        }
+        System.out.println("============");
+        //return volunteerSessionRepository.findByIdVolunteerIdOrderByStart(volunteerId)
+                //.stream().map(VolunteerSessionDTO::create).collect(Collectors.toList());
+        return vs.stream().map(VolunteerSessionDTO::create).collect(Collectors.toList());
     }
 
     public List<AssignmentSelectorDTO> getPossibleReassignments(VolunteerSessionDTO volunteerSession) {
@@ -118,6 +126,8 @@ public class VolunteerService {
         vs.setWorked(volunteerSession.isWorked());
         vs.setTokens(volunteerSession.getTokens());
         vs.setComment(volunteerSession.getComment());
+        vs.setStart(volunteerSession.getStart());
+        vs.setFinish(volunteerSession.getFinish());
         v.reassign(area, session);
         volunteerRepository.saveAndFlush(v);
     }

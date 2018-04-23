@@ -39,6 +39,7 @@ public class VolunteerSessionDataProvider extends SortableDataProvider<Volunteer
     private void init() {
         defaultSorting.add(new QuerySortOrder("volunteer.surname", SortDirection.ASCENDING));
         defaultSorting.add(new QuerySortOrder("volunteer.forename", SortDirection.ASCENDING));
+        defaultSorting.add(new QuerySortOrder("sessionStart", SortDirection.ASCENDING));
     }
 
     @Override

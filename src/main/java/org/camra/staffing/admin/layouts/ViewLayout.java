@@ -20,6 +20,7 @@ import com.vaadin.ui.Button;
 @SuppressWarnings("serial")
 public class ViewLayout extends CssLayout {
     protected Label title;
+    protected CssLayout extraHolder;
     protected Button newButton;
     protected Button closeButton;
     protected CssLayout information;

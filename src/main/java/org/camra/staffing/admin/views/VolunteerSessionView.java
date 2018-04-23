@@ -1,6 +1,7 @@
 package org.camra.staffing.admin.views;
 
 import com.vaadin.spring.annotation.SpringComponent;
+import com.vaadin.ui.Label;
 import org.camra.staffing.admin.access.Manager;
 import org.camra.staffing.admin.forms.VolunteerSessionFormLogic;
 import org.camra.staffing.admin.grids.VolunteerSessionGrid;
@@ -33,6 +34,9 @@ public class VolunteerSessionView extends ViewLayout implements StaffingView {
         this.form = context.getBean(VolunteerSessionFormLogic.class);
         this.name = volunteer.getForename()+" "+volunteer.getSurname();
         this.title.setValue("Sessions for "+name);
+        if (manager.isSuperUser()) {
+            this.extraHolder.addComponent(new Label(volunteer.getComment()));
+        }
         this.newButton.setVisible(manager.isSuperUser());
         this.newButton.setCaption("Edit Sessions");
         this.newButton.addClickListener(event-> form.editSessions(volunteer));
@@ -49,7 +53,7 @@ public class VolunteerSessionView extends ViewLayout implements StaffingView {
     void setSession(SessionSelectorDTO session) {
         this.form = context.getBean(VolunteerSessionFormLogic.class);
         this.name = session.getSessionName();
-        this.title.setValue("Assignments for "+session.getSessionName());
+        this.title.setValue("Assignments for "+session.getDescription());
         this.newButton.setVisible(false);
         this.closeButton.setCaption("Close");
         this.closeButton.addClickListener(event -> menu.removeSessionMenuItem(this));

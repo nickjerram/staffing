@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head></head>
+<body>
+<p>Dear <span th:text="${volunteer.volunteerName}"/></p>
+<p><b>Thank You for volunteering at Reading Beer and Cider Festival 2018!</b></p>
+<p>I'm pleased to tell you that your offer to volunteer has been accepted</p>
+
+<p>When you arrive, please report to the Staffing Office, which will near the Staff Entrance.
+    If you have trouble finding it, just ask. There may be a queue of public waiting to enter during
+    the open sessions, <b>please do not join the queue</b>, just tell a Steward you are a volunteer
+    and go straight in the Staff Entrance.</p>
+
+<p>Please check the times below. If any are wrong, please let me know. Since I am busy at this time of year
+there may be a delay in responding. If you don't hear back from me in time, please turn up to the Festival
+at the time you originally intended.</p>
+<ul>
+    <li th:each="period : ${volunteer.periodList.periods}" th:text="${period.times}"></li>
+</ul>
+
+<p>I look forward to seeing you at the Festival!</p>
+<p>Nick Jerram</p>
+<p>Staffing Manager</p>
+<p>Reading Beer Festival</p>
+
+</body>
+</html>

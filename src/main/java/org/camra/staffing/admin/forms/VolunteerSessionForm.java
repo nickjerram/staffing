@@ -26,6 +26,8 @@ public class VolunteerSessionForm extends VerticalLayout {
     protected Label subtitle;
     protected TextField tokens;
     protected TextField comment;
+    protected TextField start;
+    protected TextField finish;
     protected CheckBox locked;
     protected CheckBox worked;
     protected Button save;

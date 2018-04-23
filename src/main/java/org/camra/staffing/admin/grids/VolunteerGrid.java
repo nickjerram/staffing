@@ -4,14 +4,19 @@ import com.vaadin.icons.VaadinIcons;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.Grid;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.renderers.HtmlRenderer;
 import com.vaadin.ui.renderers.NumberRenderer;
 import org.camra.staffing.admin.access.Manager;
+import org.camra.staffing.admin.popup.Confirmation;
 import org.camra.staffing.data.dto.VolunteerDTO;
 import org.camra.staffing.data.entity.Volunteer;
 import org.camra.staffing.data.provider.SortableDataProvider;
 import org.camra.staffing.data.provider.VolunteerDataProvider;
+import org.camra.staffing.data.service.VolunteerService;
+import org.camra.staffing.email.EmailSender;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import java.util.function.Consumer;
@@ -21,7 +26,10 @@ import java.util.function.Consumer;
 public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
 
     @Autowired private VolunteerDataProvider volunteerDataProvider;
+    @Autowired private EmailSender emailSender;
     @Autowired private Manager manager;
+    @Autowired private VolunteerService volunteerService;
+    private boolean confirmationsEnabled = false;
 
     @PostConstruct
     private void init() {
@@ -31,6 +39,7 @@ public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
         if (manager.isSuperUser()) {
             addColumn(this::formatDelete, new HtmlRenderer()).setWidth(50).setId("del");
             addColumn(this::formatEdit, new HtmlRenderer()).setWidth(50).setId("edit");
+            addColumn(this::formatConfirm, new HtmlRenderer()).setWidth(50).setId("confirm");
         }
         addColumn(this::formatSessions, new HtmlRenderer()).setId("sessions").setWidth(50);
         addColumn(VolunteerDTO::getId, new NumberRenderer()).setCaption("Id");
@@ -44,13 +53,18 @@ public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
         addColumn(this::formatSIA, new HtmlRenderer()).setCaption("SIA").setSortable(false);
         addColumn(this::formatCellar, new HtmlRenderer()).setCaption("Cellar").setSortable(false);
         if (manager.isSuperUser()) {
-            addColumn(this::formatComment).setCaption("Comment").setSortable(false);
+            addColumn(this::formatComment, new HtmlRenderer()).setCaption("Comment").setId("comment").setSortable(false);
         }
 
         addStringFilters("surname","role");
 
         addItemClickListener(this::volunteerClick);
 
+    }
+
+    public void enableConfirmations(boolean enabled) {
+        confirmationsEnabled = enabled;
+        volunteerDataProvider.refreshAll();
     }
 
     private void volunteerClick(ItemClick<VolunteerDTO> event) {
@@ -67,6 +81,15 @@ public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
             if (deleteHandler!=null) {
                 deleteHandler.accept(event.getItem());
             }
+        } else if (confirmationsEnabled && event.getColumn().getId().equals("confirm")) {
+            if (emailSender.sendConfirmation(event.getItem())) {
+                volunteerService.setConfirmed(event.getItem());
+                volunteerDataProvider.refreshAll();
+            }
+        } else if (event.getColumn().getId().equals("comment")) {
+            if (StringUtils.hasText(event.getItem().getComment())) {
+                UI.getCurrent().addWindow(new Confirmation(event.getItem().getComment()));
+            }
         }
     }
 
@@ -76,6 +99,12 @@ public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
 
     private String formatEdit(VolunteerDTO item) {
         return Columns.getIconCode("#333", VaadinIcons.EDIT);
+    }
+
+    private String formatConfirm(VolunteerDTO item) {
+        return item.isConfirmed() ?
+            Columns.getIconCode("#090", VaadinIcons.CHECK_SQUARE) :
+            Columns.getIconCode((confirmationsEnabled ? "#900" : "#ccc"), VaadinIcons.ENVELOPE);
     }
 
     private String formatSessions(VolunteerDTO volunteer) {
@@ -112,11 +141,12 @@ public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
 
     private String formatComment(VolunteerDTO volunteer) {
         String comment = volunteer.getComment();
+        String commentIcon = Columns.formatBoolean("#333", VaadinIcons.COMMENT_ELLIPSIS, StringUtils.hasText(comment), false);
         if (comment==null) return "";
         if (comment.length()>50) {
-            return comment.substring(0, 50)+"...";
+            return commentIcon+" "+comment.substring(0, 50)+"...";
         } else {
-            return comment;
+            return commentIcon+" "+comment;
         }
     }
 

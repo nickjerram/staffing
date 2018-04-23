@@ -1,8 +1,10 @@
 package org.camra.staffing.admin.views;
 
+import com.vaadin.data.HasValue;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
+import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.UI;
 import org.camra.staffing.admin.access.Manager;
 import org.camra.staffing.admin.forms.VolunteerFormLogic;
@@ -28,6 +30,7 @@ public class VolunteerView extends ViewLayout implements StaffingView {
     @Autowired private VolunteerService volunteerService;
     @Autowired private Manager manager;
     @Lazy @Autowired private MenuLayoutLogic menu;
+    private CheckBox enableConfirmations = new CheckBox("Enable Confirmation Emails");
 
     public VolunteerSessionView createVolunteerSessionView(VolunteerDTO volunteer) {
         VolunteerSessionView view = context.getBean(VolunteerSessionView.class);
@@ -50,6 +53,15 @@ public class VolunteerView extends ViewLayout implements StaffingView {
             menu.addVolunteerMenuItem(VaadinIcons.USER, createVolunteerSessionView(volunteer))
         );
         grid.setDeleteHandler(this::deleteVolunteer);
+
+        if (manager.isSuperUser()) {
+            enableConfirmations.addValueChangeListener(this::enableConfirmations);
+            extraHolder.addComponent(enableConfirmations);
+        }
+    }
+
+    private void enableConfirmations(HasValue.ValueChangeEvent<Boolean> booleanValueChangeEvent) {
+        grid.enableConfirmations(booleanValueChangeEvent.getValue());
     }
 
     private void deleteVolunteer(VolunteerDTO volunteerDTO) {
