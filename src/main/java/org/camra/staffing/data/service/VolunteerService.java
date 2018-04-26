@@ -1,6 +1,5 @@
 package org.camra.staffing.data.service;
 
-import com.vaadin.data.provider.Query;
 import org.camra.staffing.data.dto.*;
 import org.camra.staffing.data.entity.*;
 import org.camra.staffing.data.entityviews.AreaSelector;
@@ -8,8 +7,7 @@ import org.camra.staffing.data.entityviews.AssignmentSelectorView;
 import org.camra.staffing.data.entityviews.PossibleSession;
 import org.camra.staffing.data.entityviews.VolunteerSessionView;
 import org.camra.staffing.data.repository.*;
-import org.camra.staffing.util.CamraMember;
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+import org.camra.staffing.data.entity.CamraMember;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
@@ -149,6 +147,13 @@ public class VolunteerService {
         }
         volunteerRepository.saveAndFlush(v);
     }
+
+    public void saveVolunteerPicture(int id, byte[] picture) {
+        Volunteer v = volunteerRepository.getOne(id);
+        v.setPicture(picture);
+        volunteerRepository.save(v);
+    }
+
 
     private class VolunteerAreaAssigner {
 

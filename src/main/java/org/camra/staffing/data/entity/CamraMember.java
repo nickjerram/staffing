@@ -1,4 +1,4 @@
-package org.camra.staffing.util;
+package org.camra.staffing.data.entity;
 
 import lombok.Getter;
 import lombok.ToString;

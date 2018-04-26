@@ -6,15 +6,19 @@ import com.vaadin.ui.Grid;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.components.grid.HeaderCell;
 import com.vaadin.ui.components.grid.HeaderRow;
+import lombok.AllArgsConstructor;
 import org.camra.staffing.data.dto.VolunteerDTO;
 import org.camra.staffing.data.provider.SortableDataProvider;
 import org.camra.staffing.data.specification.BooleanCriterion;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public abstract class AbstractGrid<DTO,E> extends Grid<DTO> {
 
     private HeaderRow filterRow;
+    private Map<String, RatioSpecification> ratios = new HashMap<>();
     Consumer<DTO> editHandler;
     Consumer<DTO> detailHandler;
     Consumer<DTO> deleteHandler;
@@ -84,13 +88,15 @@ public abstract class AbstractGrid<DTO,E> extends Grid<DTO> {
     }
 
     void addRatioFilter(String column, String topProperty, String bottomProperty, String ratioProperty) {
+        RatioSpecification rs = new RatioSpecification(column, topProperty, bottomProperty, ratioProperty);
+        //ratios.put(column, rs);
         HeaderRow filterRow = getFilterRow();
         HeaderCell headerCell = filterRow.getCell(column);
         TextField filterField = new TextField();
         headerCell.setComponent(filterField);
         filterField.setId(column);
         filterField.setWidth("90%");
-        filterField.addValueChangeListener(this::doRatioFilter);
+        filterField.addValueChangeListener(rs::doRatioFilter);
     }
 
     void addBooleanFilter(String column) {
@@ -112,20 +118,23 @@ public abstract class AbstractGrid<DTO,E> extends Grid<DTO> {
         dataProvider().addStringFilter(fieldId, event.getValue());
     }
 
-    private void doRatioFilter(HasValue.ValueChangeEvent<String> event) {
-        String filterId = event.getComponent().getId();
-        String[] filterIdParts = filterId.split(":");
-        String column = filterIdParts[0];
-        String topProperty = filterIdParts[1];
-        String bottomProperty = filterIdParts[2];
-        String ratioProperty = filterIdParts[3];
-        dataProvider().addRatioFilter(column, topProperty, bottomProperty, ratioProperty, event.getValue());
-    }
-
     private void doBooleanFilter(Button.ClickEvent event) {
         StatefulButton button = (StatefulButton) event.getButton();
         String filterId = button.columnId;
         dataProvider().addBooleanFilter(filterId, button.state);
+    }
+
+    @AllArgsConstructor
+    private class RatioSpecification {
+
+        private String column;
+        private String topProperty;
+        private String bottomProperty;
+        private String ratioProperty;
+
+        private void doRatioFilter(HasValue.ValueChangeEvent<String> event) {
+            dataProvider().addRatioFilter(column, topProperty, bottomProperty, ratioProperty, event.getValue());
+        }
     }
 
 }

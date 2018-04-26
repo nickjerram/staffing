@@ -4,14 +4,19 @@ import com.vaadin.data.BeanValidationBinder;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.Grid;
+import com.vaadin.ui.Upload;
 import org.camra.staffing.admin.grids.AreaSelectorGrid;
 import org.camra.staffing.data.dto.AreaSelectorDTO;
 import org.camra.staffing.data.dto.VolunteerDTO;
 import org.camra.staffing.data.entity.Preference;
 import org.camra.staffing.data.service.VolunteerService;
+import org.camra.staffing.images.UploadHandler;
+import org.camra.staffing.images.UploaderHandlerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,9 +26,11 @@ public class VolunteerFormLogic extends VolunteerForm {
 
     @Autowired private AreaSelectorGrid areaSelectorGrid;
     @Autowired private VolunteerService volunteerService;
+    @Autowired private UploaderHandlerFactory uploaderHandlerFactory;
 
     private BeanValidationBinder<VolunteerDTO> binder = new BeanValidationBinder<>(VolunteerDTO.class);
     private VolunteerDTO volunteer;
+    private Upload upload;
 
     @PostConstruct
     @SuppressWarnings("unused")
@@ -51,6 +58,11 @@ public class VolunteerFormLogic extends VolunteerForm {
         areaSelectorGrid.setItems(areaList);
         formLayout.addComponent(areaSelectorGrid, 5);
         formLayout.setExpandRatio(areaSelectorGrid, 1f);
+        UploadHandler handler = uploaderHandlerFactory.getUploader(volunteerDTO.getId());
+        upload = new Upload("Upload Picture", handler);
+        upload.addSucceededListener(handler);
+        upload.setButtonCaption("Choose Picture");
+        uploadContainer.addComponent(upload);
         show();
     }
 

@@ -8,7 +8,7 @@ import org.camra.staffing.data.service.FormService;
 import org.camra.staffing.data.service.VolunteerService;
 import org.camra.staffing.email.EmailMessage;
 import org.camra.staffing.email.EmailSender;
-import org.camra.staffing.util.CamraMember;
+import org.camra.staffing.data.entity.CamraMember;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;

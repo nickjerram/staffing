@@ -1,4 +1,4 @@
-package org.camra.staffing.util;
+package org.camra.staffing.images;
 
 import java.awt.Color;
 import java.awt.Font;

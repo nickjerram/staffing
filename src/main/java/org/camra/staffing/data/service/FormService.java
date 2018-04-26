@@ -5,12 +5,10 @@ import org.camra.staffing.data.dto.AreaSelectorDTO;
 import org.camra.staffing.data.dto.AssignedCountsDTO;
 import org.camra.staffing.data.dto.SessionSelectorDTO;
 import org.camra.staffing.data.dto.VolunteerDTO;
-import org.camra.staffing.util.CamraMember;
+import org.camra.staffing.data.entity.CamraMember;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.annotation.SessionScope;
 
-import javax.servlet.http.HttpSession;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;

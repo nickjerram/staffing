@@ -1,6 +1,6 @@
 package org.camra.staffing.controller;
 
-import org.camra.staffing.util.CaptchaImageGenerator;
+import org.camra.staffing.images.CaptchaImageGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.stereotype.Controller;
