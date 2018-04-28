@@ -58,11 +58,13 @@ public class VolunteerFormLogic extends VolunteerForm {
         areaSelectorGrid.setItems(areaList);
         formLayout.addComponent(areaSelectorGrid, 5);
         formLayout.setExpandRatio(areaSelectorGrid, 1f);
-        UploadHandler handler = uploaderHandlerFactory.getUploader(volunteerDTO.getId());
-        upload = new Upload("Upload Picture", handler);
-        upload.addSucceededListener(handler);
-        upload.setButtonCaption("Choose Picture");
-        uploadContainer.addComponent(upload);
+        if (volunteerDTO.getId()!=null) {
+            UploadHandler handler = uploaderHandlerFactory.getUploader(volunteerDTO.getId());
+            upload = new Upload("Upload Picture", handler);
+            upload.addSucceededListener(handler);
+            upload.setButtonCaption("Choose Picture");
+            uploadContainer.addComponent(upload);
+        }
         show();
     }
 
@@ -71,6 +73,7 @@ public class VolunteerFormLogic extends VolunteerForm {
     }
 
     private void hide() {
+        uploadContainer.removeAllComponents();
         removeStyleName("visible");
     }
 

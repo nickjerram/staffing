@@ -12,6 +12,9 @@
      <vaadin-label style-name="h1" plain-text _id="title" :expand>
        Label 
      </vaadin-label>
+     <vaadin-button style-name="primary" plain-text _id="editButton" visible="false">
+      Button
+     </vaadin-button>
      <vaadin-button style-name="primary" plain-text _id="newButton">
        Button 
      </vaadin-button>
@@ -19,7 +22,14 @@
        Button 
      </vaadin-button>
     </vaadin-horizontal-layout>
-    <vaadin-css-layout _id="extraHolder"></vaadin-css-layout>
+    <vaadin-horizontal-layout spacing visible="false" _id="infoHolder">
+       <vaadin-image _id="picture"></vaadin-image>
+       <vaadin-vertical-layout :expand>
+        <vaadin-label style-name="h3" plain-text _id="role"></vaadin-label>
+        <vaadin-label plain-text _id="comment"></vaadin-label>
+       </vaadin-vertical-layout>
+    </vaadin-horizontal-layout>
+    <vaadin-css-layout width-full _id="extraHolder"></vaadin-css-layout>
     <vaadin-css-layout width-full _id="information"></vaadin-css-layout>
     <vaadin-css-layout size-full _id="gridHolder" :expand></vaadin-css-layout>
     <vaadin-css-layout _id="formHolder"></vaadin-css-layout>

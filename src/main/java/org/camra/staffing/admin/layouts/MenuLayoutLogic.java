@@ -38,32 +38,35 @@ public class MenuLayoutLogic extends MenuLayout {
     }
 
     public void addVolunteerMenuItem(Resource icon, StaffingView view, boolean defaultView) {
-        Button button = createButton(icon, view.getName());
-        menuButtons.put(view.getName(), button);
-        volunteerMenuItems.addComponent(button);
-
-        adminUI.getNavigator().addView(view.getName(), view);
-        if (defaultView) {
-            adminUI.getNavigator().addView("", view);
+        if (!menuButtons.containsKey(view.getName())) {
+            Button button = createButton(icon, view.getName());
+            menuButtons.put(view.getName(), button);
+            volunteerMenuItems.addComponent(button);
+            adminUI.getNavigator().addView(view.getName(), view);
+            if (defaultView) {
+                adminUI.getNavigator().addView("", view);
+            }
         }
     }
 
     public void removeVolunteerMenuItem(StaffingView view) {
-        Button buttonToRemove = menuButtons.get(view.getName());
+        Button buttonToRemove = menuButtons.remove(view.getName());
         volunteerMenuItems.removeComponent(buttonToRemove);
         adminUI.getNavigator().removeView(view.getName());
         adminUI.getNavigator().navigateTo("Volunteers");
     }
 
     public void addSessionMenuItem(Resource icon, StaffingView view) {
-        Button button = createButton(icon, view.getName());
-        menuButtons.put(view.getName(), button);
-        sessionMenuItems.addComponent(button);
-        adminUI.getNavigator().addView(view.getName(), view);
+        if (!menuButtons.containsKey(view.getName())) {
+            Button button = createButton(icon, view.getName());
+            menuButtons.put(view.getName(), button);
+            sessionMenuItems.addComponent(button);
+            adminUI.getNavigator().addView(view.getName(), view);
+        }
     }
 
     public void removeSessionMenuItem(StaffingView view) {
-        Button buttonToRemove = menuButtons.get(view.getName());
+        Button buttonToRemove = menuButtons.remove(view.getName());
         buttonToRemove.setVisible(false);
         sessionMenuItems.removeComponent(buttonToRemove);
         adminUI.getNavigator().removeView(view.getName());

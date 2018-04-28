@@ -12,7 +12,7 @@ import java.util.Base64;
 public class PasswordHash {
 
     public static void main(String[] args) {
-        System.out.println(new PasswordHash().hashPassword("password"));
+        System.out.println(new PasswordHash().hashPassword("letmein!"));
     }
 
     public String hashPassword(String password) {

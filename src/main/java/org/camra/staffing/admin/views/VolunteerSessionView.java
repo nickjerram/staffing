@@ -1,6 +1,8 @@
 package org.camra.staffing.admin.views;
 
+import com.vaadin.server.ThemeResource;
 import com.vaadin.spring.annotation.SpringComponent;
+import com.vaadin.ui.Image;
 import com.vaadin.ui.Label;
 import org.camra.staffing.admin.access.Manager;
 import org.camra.staffing.admin.forms.VolunteerSessionFormLogic;
@@ -34,9 +36,10 @@ public class VolunteerSessionView extends ViewLayout implements StaffingView {
         this.form = context.getBean(VolunteerSessionFormLogic.class);
         this.name = volunteer.getForename()+" "+volunteer.getSurname();
         this.title.setValue("Sessions for "+name);
-        if (manager.isSuperUser()) {
-            this.extraHolder.addComponent(new Label(volunteer.getComment()));
-        }
+        this.role.setValue(volunteer.getRole());
+        this.comment.setValue(manager.isSuperUser() ? volunteer.getComment() : "");
+        this.infoHolder.setVisible(true);
+        this.picture.setSource(volunteer.getPicture().getResource());
         this.newButton.setVisible(manager.isSuperUser());
         this.newButton.setCaption("Edit Sessions");
         this.newButton.addClickListener(event-> form.editSessions(volunteer));

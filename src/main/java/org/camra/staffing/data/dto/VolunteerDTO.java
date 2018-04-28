@@ -3,6 +3,7 @@ package org.camra.staffing.data.dto;
 import lombok.Getter;
 import lombok.Setter;
 import org.camra.staffing.data.entity.*;
+import org.camra.staffing.images.JPEGImage;
 import org.hibernate.validator.constraints.Email;
 import org.springframework.beans.BeanUtils;
 
@@ -37,10 +38,15 @@ public class VolunteerDTO {
     private int assignedSessions;
     private int totalSessions;
     private int worked;
+    private byte[] picture;
     private Map<Integer,AreaSelectorDTO> areas = new HashMap<>();
     private Set<Integer> sessions = new HashSet<>();
     private Set<Integer> sessionsToRemove = new HashSet<>();
     private Set<Integer> sessionsToAdd = new HashSet<>();
+
+    public JPEGImage getPicture() {
+        return JPEGImage.createImage(picture);
+    }
 
     public boolean isAssigned() {
         return assignedSessions==totalSessions;
