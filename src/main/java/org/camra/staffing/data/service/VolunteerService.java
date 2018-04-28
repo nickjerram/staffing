@@ -141,6 +141,12 @@ public class VolunteerService {
         volunteerRepository.saveAndFlush(v);
     }
 
+    public void setVolunteerAssignmentsConfirmed(int volunteerId, boolean confirmed) {
+        Volunteer v = volunteerRepository.getOne(volunteerId);
+        v.setOther(confirmed);
+        volunteerRepository.saveAndFlush(v);
+    }
+
     public void saveVolunteerSession(int volunteerId, List<Integer> sessionsIds) {
         Volunteer v = volunteerRepository.getOne(volunteerId);
         for (Integer sessionId: sessionsIds) {

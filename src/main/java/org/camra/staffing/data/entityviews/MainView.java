@@ -38,6 +38,7 @@ public class MainView {
     private boolean sia;
     private boolean cellar;
     private boolean hasComment;
+    private boolean other;
 
 
     public String toString() {

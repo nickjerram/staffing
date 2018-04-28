@@ -44,21 +44,22 @@ public class MainAssignmentGrid extends AbstractGrid<MainViewDTO, MainView> {
         setSelectionMode(SelectionMode.NONE);
         setDataProvider(dataProvider);
         addColumn(MainViewDTO::getVolunteerId).setCaption("").setId("volunteerId").setWidth(50);
+        addColumn(this::formatAssignmentsConfirmed, new HtmlRenderer()).setCaption("").setId("other").setWidth(65);
         addColumn(this::formatVolunteer, new HtmlRenderer()).setCaption("Name").setId("volunteerName").setWidth(200);
-        addColumn(this::formatComment, new HtmlRenderer()).setCaption("").setId("hasComment").setWidth(75);
+        addColumn(this::formatComment, new HtmlRenderer()).setCaption("").setId("hasComment").setWidth(65);
         addColumn(MainViewDTO::getSessionName).setCaption("Session").setId("sessionName.start").setWidth(200);
         addColumn(this::formatArea, new HtmlRenderer()).setCaption("Area").setId("areaName").setWidth(200);
         addColumn(this::formatAssigned, new HtmlRenderer()).setCaption("Assigned").setId("assigned").setWidth(100);
         addColumn(this::formatWorked, new HtmlRenderer()).setCaption("Worked").setId("worked").setWidth(100);
-        addColumn(this::formatCurrent, new HtmlRenderer()).setCaption("").setId("current").setWidth(75);
-        addColumn(this::formatLocked, new HtmlRenderer()).setCaption("Lock").setId("locked").setWidth(75);
+        addColumn(this::formatCurrent, new HtmlRenderer()).setCaption("").setId("current").setWidth(65);
+        addColumn(this::formatLocked, new HtmlRenderer()).setCaption("Lock").setId("locked").setWidth(65);
 
         addColumn(MainViewDTO::getCurrentAreaName).setCaption("Name").setId("currentAreaName").setWidth(250);
         addColumn(MainViewDTO::getComment).setCaption("Comment").setId("sessionComment").setExpandRatio(1);
 
 
         HeaderRow groupRow = prependHeaderRow();
-        groupRow.join("volunteerId","volunteerName","hasComment").setText("Volunteer");
+        groupRow.join("volunteerId","other","volunteerName","hasComment").setText("Volunteer");
         groupRow.join("sessionName.start","areaName","assigned","worked","current","locked").setText("Possible Assignment");
         groupRow.join("currentAreaName","sessionComment").setText("Actual Assignment");
         setFrozenColumnCount(5);
@@ -67,6 +68,7 @@ public class MainAssignmentGrid extends AbstractGrid<MainViewDTO, MainView> {
 
         addRatioFilter("assigned","assigned","required","requiredRatio");
 
+        addBooleanFilter("other");
         addBooleanFilter("hasComment");
         addBooleanFilter("current");
         addItemClickListener(this::selectRow);
@@ -99,6 +101,9 @@ public class MainAssignmentGrid extends AbstractGrid<MainViewDTO, MainView> {
                 volunteerService.saveAssignmentComment(volunteerId, sessionId, comment);
                 dataProvider.refreshAll();
             }));
+        } else if (columnId.equals("other")) {
+            volunteerService.setVolunteerAssignmentsConfirmed(volunteerId, !item.isOther());
+            dataProvider.refreshAll();
         }
     }
 
@@ -130,6 +135,10 @@ public class MainAssignmentGrid extends AbstractGrid<MainViewDTO, MainView> {
 
     private String formatCurrent(MainViewDTO dto) {
         return dto.isCurrent() ? Columns.getYes() : Columns.getNo();
+    }
+
+    private String formatAssignmentsConfirmed(MainViewDTO dto) {
+        return dto.isOther() ? Columns.getYes() : Columns.getNo();
     }
 
     private String formatLocked(MainViewDTO dto) {
