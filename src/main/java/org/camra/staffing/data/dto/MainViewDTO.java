@@ -32,6 +32,7 @@ public class MainViewDTO {
     private boolean forklift;
     private boolean sia;
     private boolean cellar;
+    private boolean hasComment;
 
     public static MainViewDTO create(MainView mainView) {
         MainViewDTO dto = new MainViewDTO();

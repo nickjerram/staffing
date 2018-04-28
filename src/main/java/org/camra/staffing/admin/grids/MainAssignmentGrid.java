@@ -11,6 +11,7 @@ import com.vaadin.ui.components.grid.HeaderRow;
 import com.vaadin.ui.renderers.HtmlRenderer;
 import org.camra.staffing.admin.access.Manager;
 import org.camra.staffing.admin.popup.Confirmation;
+import org.camra.staffing.admin.popup.Editor;
 import org.camra.staffing.data.dto.MainViewDTO;
 import org.camra.staffing.data.dto.VolunteerSessionDTO;
 import org.camra.staffing.data.entity.Preference;
@@ -30,6 +31,12 @@ public class MainAssignmentGrid extends AbstractGrid<MainViewDTO, MainView> {
     @Autowired private MainAssignmentDataProvider dataProvider;
     @Autowired private VolunteerService volunteerService;
     @Autowired private Manager manager;
+    private boolean unlockingEnabled = false;
+
+    public void setUnlockingEnabled(boolean enabled) {
+        this.unlockingEnabled = enabled;
+        dataProvider.refreshAll();
+    }
 
     @PostConstruct
     private void init() {
@@ -38,34 +45,39 @@ public class MainAssignmentGrid extends AbstractGrid<MainViewDTO, MainView> {
         setDataProvider(dataProvider);
         addColumn(MainViewDTO::getVolunteerId).setCaption("").setId("volunteerId").setWidth(50);
         addColumn(this::formatVolunteer, new HtmlRenderer()).setCaption("Name").setId("volunteerName").setWidth(200);
+        addColumn(this::formatComment, new HtmlRenderer()).setCaption("").setId("hasComment").setWidth(75);
         addColumn(MainViewDTO::getSessionName).setCaption("Session").setId("sessionName.start").setWidth(200);
         addColumn(this::formatArea, new HtmlRenderer()).setCaption("Area").setId("areaName").setWidth(200);
         addColumn(this::formatAssigned, new HtmlRenderer()).setCaption("Assigned").setId("assigned").setWidth(100);
         addColumn(this::formatWorked, new HtmlRenderer()).setCaption("Worked").setId("worked").setWidth(100);
         addColumn(this::formatCurrent, new HtmlRenderer()).setCaption("").setId("current").setWidth(75);
+        addColumn(this::formatLocked, new HtmlRenderer()).setCaption("Lock").setId("locked").setWidth(75);
+
         addColumn(MainViewDTO::getCurrentAreaName).setCaption("Name").setId("currentAreaName").setWidth(250);
-        addColumn(this::formatLocked, new HtmlRenderer()).setCaption("Locked").setId("locked").setWidth(75);
-        addColumn(MainViewDTO::getComment).setCaption("Comment").setId("comment").setExpandRatio(1);
+        addColumn(MainViewDTO::getComment).setCaption("Comment").setId("sessionComment").setExpandRatio(1);
 
 
         HeaderRow groupRow = prependHeaderRow();
-        groupRow.join("volunteerId","volunteerName").setText("Volunteer");
-        groupRow.join("sessionName.start","areaName","assigned","worked","current").setText("Possible Assignment");
-        groupRow.join("currentAreaName","locked","comment").setText("Actual Assignment");
+        groupRow.join("volunteerId","volunteerName","hasComment").setText("Volunteer");
+        groupRow.join("sessionName.start","areaName","assigned","worked","current","locked").setText("Possible Assignment");
+        groupRow.join("currentAreaName","sessionComment").setText("Actual Assignment");
         setFrozenColumnCount(5);
 
         addStringFilters("volunteerName","sessionName.start","areaName","currentAreaName");
 
         addRatioFilter("assigned","assigned","required","requiredRatio");
 
+        addBooleanFilter("hasComment");
         addBooleanFilter("current");
         addItemClickListener(this::selectRow);
     }
 
     private void selectRow(ItemClick<MainViewDTO> event) {
         String columnId = event.getColumn().getId();
+        MainViewDTO item = event.getItem();
+        int volunteerId = item.getVolunteerId();
+        int sessionId = item.getSessionId();
         if (columnId.equals("current")) {
-            MainViewDTO item = event.getItem();
             if (!item.isLocked() && manager.isSuperUser()) {
                 VolunteerSessionDTO reassignment = new VolunteerSessionDTO(item);
                 reassignment.setAreaId(item.getAreaId());
@@ -73,16 +85,20 @@ public class MainAssignmentGrid extends AbstractGrid<MainViewDTO, MainView> {
                 dataProvider.refreshAll();
             }
         } else if (columnId.equals("locked")) {
-            MainViewDTO item = event.getItem();
-            VolunteerSessionDTO reassignment = new VolunteerSessionDTO(item);
-            reassignment.setLocked(!item.isLocked());
-            volunteerService.saveAssignment(reassignment);
-            dataProvider.refreshAll();
-        } else if (columnId.equals("volunteerName")) {
+            if (!item.isLocked() || unlockingEnabled) {
+                volunteerService.lockAssignment(volunteerId, sessionId, !item.isLocked());
+                dataProvider.refreshAll();
+            }
+        } else if (columnId.equals("hasComment")) {
             String volunteerComment = manager.isSuperUser() ? event.getItem().getVolunteerComment() : "";
             if (StringUtils.hasText(volunteerComment)) {
                 UI.getCurrent().addWindow(new Confirmation(volunteerComment));
             }
+        } else if (columnId.equals("sessionComment")) {
+            UI.getCurrent().addWindow(new Editor("Session Comment", item.getComment(), comment -> {
+                volunteerService.saveAssignmentComment(volunteerId, sessionId, comment);
+                dataProvider.refreshAll();
+            }));
         }
     }
 
@@ -93,12 +109,14 @@ public class MainAssignmentGrid extends AbstractGrid<MainViewDTO, MainView> {
 
     private String formatVolunteer(MainViewDTO dto) {
         String name = dto.getVolunteerName();
-        String volunteerComment = manager.isSuperUser() ? dto.getVolunteerComment() : "";
         String firstAid = Columns.formatBoolean("#00aa00", VaadinIcons.DOCTOR_BRIEFCASE, dto.isFirstaid(), false);
         String sia = Columns.formatBoolean("#ffff00", VaadinIcons.EYE, dto.isSia(), false);
         String cellar = Columns.formatBoolean("#444400", VaadinIcons.GLASS, dto.isCellar(), false);
-        String comment = Columns.formatBoolean("#333", VaadinIcons.COMMENT_ELLIPSIS, StringUtils.hasText(volunteerComment), false);
-        return name+" "+comment+" "+firstAid+sia+cellar;
+        return name+" "+firstAid+sia+cellar;
+    }
+
+    private String formatComment(MainViewDTO dto) {
+        return Columns.formatBoolean("#333", VaadinIcons.COMMENT_ELLIPSIS, dto.isHasComment(), false);
     }
 
 
@@ -115,7 +133,8 @@ public class MainAssignmentGrid extends AbstractGrid<MainViewDTO, MainView> {
     }
 
     private String formatLocked(MainViewDTO dto) {
-        return dto.isLocked() ? Columns.getIconCode("#900", VaadinIcons.LOCK) : "";
+        String lockColour = unlockingEnabled ? "#090" : "#900";
+        return dto.isLocked() ? Columns.getIconCode(lockColour, VaadinIcons.LOCK) : "";
     }
 
     protected SortableDataProvider<MainViewDTO, MainView> dataProvider() {

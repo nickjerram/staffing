@@ -37,6 +37,7 @@ public class MainView {
     private boolean forklift;
     private boolean sia;
     private boolean cellar;
+    private boolean hasComment;
 
 
     public String toString() {

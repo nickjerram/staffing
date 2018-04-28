@@ -98,9 +98,6 @@ public class VolunteerService {
         for (VolunteerSessionView v : vs) {
             System.out.println(v.getSessionName());
         }
-        System.out.println("============");
-        //return volunteerSessionRepository.findByIdVolunteerIdOrderByStart(volunteerId)
-                //.stream().map(VolunteerSessionDTO::create).collect(Collectors.toList());
         return vs.stream().map(VolunteerSessionDTO::create).collect(Collectors.toList());
     }
 
@@ -127,6 +124,20 @@ public class VolunteerService {
         vs.setStart(volunteerSession.getStart());
         vs.setFinish(volunteerSession.getFinish());
         v.reassign(area, session);
+        volunteerRepository.saveAndFlush(v);
+    }
+
+    public void saveAssignmentComment(int volunteerId, int sessionId, String comment) {
+        Volunteer v = volunteerRepository.getOne(volunteerId);
+        VolunteerSession vs = v.getSessionMap().get(sessionId);
+        vs.setComment(comment);
+        volunteerRepository.saveAndFlush(v);
+    }
+
+    public void lockAssignment(int volunteerId, int sessionId, boolean locked) {
+        Volunteer v = volunteerRepository.getOne(volunteerId);
+        VolunteerSession vs = v.getSessionMap().get(sessionId);
+        vs.setLocked(locked);
         volunteerRepository.saveAndFlush(v);
     }
 
