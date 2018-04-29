@@ -2,6 +2,7 @@ package org.camra.staffing.data.provider;
 
 import com.vaadin.data.provider.QuerySortOrder;
 import com.vaadin.shared.data.sort.SortDirection;
+import org.camra.staffing.data.dto.BadgeDTO;
 import org.camra.staffing.data.dto.VolunteerDTO;
 import org.camra.staffing.data.entity.Volunteer;
 import org.camra.staffing.data.service.MainViewService;
@@ -19,6 +20,7 @@ import org.springframework.data.jpa.domain.Specification;
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @SpringComponent
@@ -28,6 +30,10 @@ public class VolunteerDataProvider extends SortableDataProvider<VolunteerDTO,Vol
     @Autowired private VolunteerService volunteerService;
 
     private List<QuerySortOrder> defaultSorting = new ArrayList<>();
+
+    public List<BadgeDTO> getBadges() {
+        return volunteerService.getBadges(buildSpecification()).collect(Collectors.toList());
+    }
 
     @PostConstruct
     private void init() {

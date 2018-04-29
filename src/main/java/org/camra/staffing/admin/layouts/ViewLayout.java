@@ -23,6 +23,7 @@ public class ViewLayout extends CssLayout {
     protected Label comment;
     protected Button newButton;
     protected Button closeButton;
+    protected Button editButton;
     protected HorizontalLayout infoHolder;
     protected CssLayout information;
     protected CssLayout gridHolder;

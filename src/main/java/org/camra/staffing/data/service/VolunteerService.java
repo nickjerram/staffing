@@ -34,6 +34,10 @@ public class VolunteerService {
         return volunteerRepository.findAll(specification, pageable).getContent().stream().map(VolunteerDTO::create);
     }
 
+    public Stream<BadgeDTO> getBadges(Specification<Volunteer> specification) {
+        return volunteerRepository.findAll(specification).stream().map(BadgeDTO::create);
+    }
+
     public int getVolunteerCount(Specification<Volunteer> specification) {
         return (int) volunteerRepository.count(specification);
     }

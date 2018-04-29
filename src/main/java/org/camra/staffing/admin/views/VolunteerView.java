@@ -4,6 +4,7 @@ import com.vaadin.data.HasValue;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
+import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.UI;
 import org.camra.staffing.admin.access.Manager;
@@ -11,8 +12,11 @@ import org.camra.staffing.admin.forms.VolunteerFormLogic;
 import org.camra.staffing.admin.grids.VolunteerGrid;
 import org.camra.staffing.admin.layouts.MenuLayoutLogic;
 import org.camra.staffing.admin.layouts.ViewLayout;
+import org.camra.staffing.admin.pdf.BadgeGenerator;
 import org.camra.staffing.admin.popup.Confirmation;
 import org.camra.staffing.data.dto.VolunteerDTO;
+import org.camra.staffing.data.entity.Volunteer;
+import org.camra.staffing.data.provider.VolunteerDataProvider;
 import org.camra.staffing.data.service.VolunteerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -55,9 +59,18 @@ public class VolunteerView extends ViewLayout implements StaffingView {
         grid.setDeleteHandler(this::deleteVolunteer);
 
         if (manager.isSuperUser()) {
+            editButton.setCaption("Print Badges");
+            editButton.setVisible(true);
+            editButton.addClickListener(this::printBadges);
             enableConfirmations.addValueChangeListener(this::enableConfirmations);
             extraHolder.addComponent(enableConfirmations);
         }
+    }
+
+    private void printBadges(Button.ClickEvent clickEvent) {
+        VolunteerDataProvider provider = (VolunteerDataProvider) grid.getDataProvider();
+        manager.setBadges(provider.getBadges());
+        getUI().getPage().open("/badges","_blank");
     }
 
     private void enableConfirmations(HasValue.ValueChangeEvent<Boolean> booleanValueChangeEvent) {
