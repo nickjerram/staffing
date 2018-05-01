@@ -56,7 +56,7 @@ public class VolunteerSessionView extends ViewLayout implements StaffingView {
     void setSession(SessionSelectorDTO session) {
         this.form = context.getBean(VolunteerSessionFormLogic.class);
         this.name = session.getSessionName();
-        this.title.setValue("Assignments for "+session.getDescription());
+        this.title.setValue("Assignments for "+session.getSessionName()+" ("+session.getDescription()+")");
         this.newButton.setVisible(false);
         this.closeButton.setCaption("Close");
         this.closeButton.addClickListener(event -> menu.removeSessionMenuItem(this));

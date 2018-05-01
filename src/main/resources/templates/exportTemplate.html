@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<h2 th:text="${title}"/>
+
+<table>
+    <tr>
+        <th>Forename</th>
+        <th>Surname</th>
+        <th>Area</th>
+        <th>Start</th>
+        <th>Finish</th>
+        <th>Comment</th>
+    </tr>
+
+    <tr th:each="assignment : ${assignments}">
+        <td th:text="${assignment.forename}"/>
+        <td th:text="${assignment.surname}"/>
+        <td th:text="${assignment.areaName}"/>
+        <td th:text="${assignment.startTime}"/>
+        <td th:text="${assignment.finishTime}"/>
+        <td th:text="${assignment.comment}"/>
+    </tr>
+</table>
+</body>
+</html>

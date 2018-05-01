@@ -67,6 +67,14 @@ public class VolunteerSessionDTO {
         return sessionName+" ("+TIME.format(sessionStart)+"-"+TIME.format(sessionFinish)+")";
     }
 
+    public String getStartTime() {
+        return start==null ? "" :TIME.format(start);
+    }
+
+    public String getFinishTime() {
+        return finish==null ? "" :TIME.format(finish);
+    }
+
 
     private Date copyTimeOfDay(Date ddmmyy, Date hhmm) {
         if (hhmm==null) return null;

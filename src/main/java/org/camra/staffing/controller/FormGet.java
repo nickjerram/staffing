@@ -39,6 +39,7 @@ public class FormGet {
     @Autowired private HttpSession httpSession;
     @Autowired private VolunteerService volunteerService;
     @Autowired private FormManager formManager;
+    private boolean closed = true;
 
 
     /**
@@ -47,7 +48,7 @@ public class FormGet {
     @GetMapping("/")
     public String getMemberVerificationForm() {
         formManager.setVerify();
-        return "form";
+        return closed ? "closed" : "form";
     }
 
     /**
@@ -56,7 +57,7 @@ public class FormGet {
     @GetMapping("/email")
     public String getEmailVerificationForm() {
         formManager.setEmail();
-        return "form";
+        return closed ? "closed" : "form";
     }
 
     /**
@@ -72,7 +73,7 @@ public class FormGet {
         } else {
             formManager.setVolunteerNotFound();
         }
-        return "form";
+        return closed ? "closed" : "form";
     }
 
 
