@@ -82,10 +82,10 @@ public class VolunteerGrid extends AbstractGrid<VolunteerDTO,Volunteer> {
                 deleteHandler.accept(event.getItem());
             }
         } else if (confirmationsEnabled && event.getColumn().getId().equals("confirm") && event.getItem().isAssigned()) {
-            if (emailSender.sendConfirmation(event.getItem())) {
-                volunteerService.setConfirmed(event.getItem());
-                volunteerDataProvider.refreshAll();
-            }
+            //if (emailSender.sendConfirmation(event.getItem())) {
+            //   volunteerService.setConfirmed(event.getItem());
+            //    volunteerDataProvider.refreshAll();
+            //}
         } else if (event.getColumn().getId().equals("comment")) {
             if (StringUtils.hasText(event.getItem().getComment())) {
                 UI.getCurrent().addWindow(new Confirmation(event.getItem().getComment()));
